@@ -26,9 +26,8 @@ def pinpoint_execution_time(func):
     return wrapper
 
 
-def create_kuber():
-    # connect to Cluster with IAM
-    config.load_kube_config()
+def create_kuber(config_file_path=None):
+    config.load_kube_config(config_file_path)
     kuber = client.CoreV1Api()
     return kuber
 
@@ -52,6 +51,9 @@ def create_pod(kuber: client.CoreV1Api, namespace: str, pod_name: str):
 
 def list_nodes_with_tag(kuber: client.CoreV1Api, tag: str):
     nodes = kuber.list_node()
+
+    for node in nodes.items:
+        pass
     # todo: filter by tag
     return nodes.items
 
@@ -60,7 +62,7 @@ def count_nodes_with_tag(kuber: client.CoreV1Api, tag: str):
     return len(list_nodes_with_tag(kuber, tag))
 
 
-def is_pod_ready(pod):
+def is_pod_ready(pod) -> bool:
     if not pod.status.conditions:
         return False
     statuses = [item.type for item in pod.status.conditions]
@@ -93,7 +95,6 @@ def test_over_provisioning(
             return False
 
         nodes_amount = count_nodes_with_tag(kuber, configuration.NODE_TAG)
-        logger.info(f"Pod creation time hit the limit. Test Failed")
         if nodes_amount > initial_amount_of_nodes:
             logger.info(f"Amount of nodes increased. Test Passed")
             return True
@@ -112,7 +113,8 @@ def cleanup_pods(kuber: client.CoreV1Api, pods_amount: int, namespace: str):
 
 
 def main():
-    kuber = create_kuber()
+    kuber_config_file_path = "kube_config.yaml"
+    kuber = create_kuber(kuber_config_file_path)
     result = test_over_provisioning(kuber, Config)
     print(result)
 
