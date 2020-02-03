@@ -49,17 +49,19 @@ def create_pod(kuber: client.CoreV1Api, namespace: str, pod_name: str):
     return kuber.create_namespaced_pod(namespace, pod, pretty=True)
 
 
-def list_nodes_with_tag(kuber: client.CoreV1Api, tag: str):
-    nodes = kuber.list_node()
-
-    for node in nodes.items:
-        pass
-    # todo: filter by tag
+def list_nodes_filtered_by_label_selector(kuber: client.CoreV1Api, label_selector: str):
+    """
+    label_selector variations:
+      only label key: "label_key"
+      label key with value: "label_key=label_value"
+      list of mixed labels: "label_key,label_key_2=label_value"
+    """
+    nodes = kuber.list_node(label_selector=label_selector)
     return nodes.items
 
 
-def count_nodes_with_tag(kuber: client.CoreV1Api, tag: str):
-    return len(list_nodes_with_tag(kuber, tag))
+def count_nodes_with_labels(kuber: client.CoreV1Api, label_selector: str):
+    return len(list_nodes_filtered_by_label_selector(kuber, label_selector))
 
 
 def is_pod_ready(pod) -> bool:
@@ -79,7 +81,7 @@ def wait_until_pod_is_ready(kuber: client.CoreV1Api, namespace: str, pod_name: s
 
 def test_over_provisioning(
         kuber: client.CoreV1Api, configuration):
-    initial_amount_of_nodes = count_nodes_with_tag(kuber, configuration.NODE_TAG)
+    initial_amount_of_nodes = count_nodes_with_labels(kuber, configuration.NODE_TAG)
 
     for i in range(1, configuration.AMOUNT_OF_PODS_TO_CREATE + 1):
         pod_name = f"test-pod-{i}"
@@ -94,7 +96,7 @@ def test_over_provisioning(
             logger.info("Pod creation time hit the limit. Test Failed")
             return False
 
-        nodes_amount = count_nodes_with_tag(kuber, configuration.NODE_TAG)
+        nodes_amount = count_nodes_with_labels(kuber, configuration.NODE_TAG)
         if nodes_amount > initial_amount_of_nodes:
             logger.info(f"Amount of nodes increased. Test Passed")
             return True
