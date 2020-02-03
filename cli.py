@@ -1,6 +1,7 @@
 import click
 
-from over_provisioning import main, KuberNamespace, create_kuber, PodsCreator, LabeledPodsFinder, NodesLister
+from over_provisioning import main, KuberNamespace, create_kuber, PodsCreator, LabeledPodsFinder, NodesLister, \
+    OverProvisioningTest
 
 from settings import Settings
 
@@ -37,19 +38,18 @@ def run(
 
     kubernetes_namespace_instance = KuberNamespace(kuber, kubernetes_namespace)
     over_provisioning_pods_finder = LabeledPodsFinder(
-        kuber, namespace=settings.kubernetes_namespace,
-        label_selector=settings.nodes_label_selector
+        kuber, namespace=settings.kubernetes_namespace, label_selector=settings.nodes_label_selector
     )
     pods_creator = PodsCreator(kuber, settings.kubernetes_namespace)
     nodes_lister = NodesLister(kuber)
 
+    test_runner = OverProvisioningTest(pods_creator, over_provisioning_pods_finder, nodes_lister)
+
     main(
-        kubernetes_conf_path,
         kubernetes_namespace_instance,
         create_new_namespace,
-        nodes_lister,
-        pods_creator,
-        over_provisioning_pods_finder,
+        test_runner,
+        settings.max_pod_creation_time_in_seconds
     )
 
 

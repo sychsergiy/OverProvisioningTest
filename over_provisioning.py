@@ -61,12 +61,12 @@ class KuberNamespace:
     def delete(self):
         return self._kuber.delete_namespace(self._name)
 
-    def is_exists(self):
+    def check_if_exists(self):
         try:
             self._kuber.read_namespace(self._name)
         except client.rest.ApiException as e:
             if e.status == 404:
-                return False
+                raise RuntimeError(f"Provided namespace: {self._name} doesnt exists.")
             else:
                 raise e
         return True
@@ -123,6 +123,49 @@ class PodsCreator:
         return "Ready" in statuses
 
 
+class OverProvisioningTest:
+    def __init__(
+            self,
+            pods_creator: PodsCreator,
+            over_provisioning_pods_finder: OverProvisioningPodsFinder,
+            nodes_lister: NodesLister,
+    ):
+        self._pods_creator = pods_creator
+        self._over_provisioning_pods_finder = over_provisioning_pods_finder
+        self._nodes_lister = nodes_lister
+
+    def run(self, max_pod_creation_time_in_seconds):
+        initial_amount_of_nodes = len(self._nodes_lister.find_all())
+        logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
+        pods_map = self._over_provisioning_pods_finder.find_pods()
+
+        i = 1
+        while i < 10:  # todo: infinity instead of 10 here
+            pod_name = f"test-pod-{i}"
+            logger.info(f"Init pod creation. Pod name: {pod_name}")
+            _, execution_time = self._pods_creator.create_pod(pod_name)
+            logger.info(f"Pod creation time: {execution_time}")
+
+            if execution_time > max_pod_creation_time_in_seconds:
+                logger.info("Pod creation time hit the limit. Test Failed")
+                return
+
+            logger.info(f"Wait until pod is ready")
+            _, waited_time = self._pods_creator.wait_until_pod_ready(pod_name)
+            logger.info(f"Waited time: {waited_time}\n")
+
+            pods_map_after_pod_creation = self._over_provisioning_pods_finder.find_pods()
+
+            if pods_map != pods_map_after_pod_creation:
+                logger.info(f"One of the over provisioning pods changed the node")  # should not be triggered locally
+                return
+
+            i += 1
+
+        amount_of_nodes_after_test = len(self._nodes_lister.find_all())
+        logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
+
+
 def test_over_provisioning(
         pods_creator: PodsCreator,
         over_provisioning_pods_finder: OverProvisioningPodsFinder,
@@ -161,21 +204,17 @@ def test_over_provisioning(
 
 
 def main(
-        settings: Settings,
         kuber_namespace: KuberNamespace,
         create_new_namespace: bool,
-        nodes_lister: NodesLister,
-        pods_creator: PodsCreator,
-        over_provisioning_pods_finder: OverProvisioningPodsFinder
+        test_runner: OverProvisioningTest,
+        max_pod_creation_time_in_seconds: float,
 ):
     if create_new_namespace:
         kuber_namespace.create()
         time.sleep(1)
     else:
-        if not kuber_namespace.is_exists():
-            raise RuntimeError(f"Provided namespace: {settings.kubernetes_namespace} doesnt exists.")
-    test_over_provisioning(
-        pods_creator, over_provisioning_pods_finder, nodes_lister, settings.max_pod_creation_time_in_seconds
-    )
+        kuber_namespace.check_if_exists()
+
+    test_runner.run(max_pod_creation_time_in_seconds)
 
     kuber_namespace.delete()
