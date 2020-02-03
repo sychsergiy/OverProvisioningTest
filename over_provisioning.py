@@ -134,35 +134,46 @@ class OverProvisioningTest:
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_lister = nodes_lister
 
-    def run(self, max_pod_creation_time_in_seconds):
+    def _create_pod_and_until_ready(self, pod_name: str, max_pod_creation_time_in_seconds: float) -> bool:
+        logger.info(f"Init pod creation. Pod name: {pod_name}")
+        _, execution_time = self._pods_creator.create_pod(pod_name)
+        logger.info(f"Pod creation time: {execution_time}")
+
+        if execution_time > max_pod_creation_time_in_seconds:
+            logger.info("Pod creation time hit the limit. Test Failed")
+            return False
+
+        logger.info(f"Wait until pod is ready")
+        _, waited_time = self._pods_creator.wait_until_pod_ready(pod_name)
+        logger.info(f"Waited time: {waited_time}\n")
+        return True
+
+    def run(self, max_pod_creation_time_in_seconds) -> bool:
         initial_amount_of_nodes = len(self._nodes_lister.find_all())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
-        pods_map = self._over_provisioning_pods_finder.find_pods()
+        initial_pods_map = self._over_provisioning_pods_finder.find_pods()
 
         i = 1
-        while i < True:
+        while True:
             pod_name = f"test-pod-{i}"
-            logger.info(f"Init pod creation. Pod name: {pod_name}")
-            _, execution_time = self._pods_creator.create_pod(pod_name)
-            logger.info(f"Pod creation time: {execution_time}")
+            if not self._create_pod_and_until_ready(pod_name, max_pod_creation_time_in_seconds):
+                test_result = False
+                break
 
-            if execution_time > max_pod_creation_time_in_seconds:
-                logger.info("Pod creation time hit the limit. Test Failed")
-                return
+            current_pods_map = self._over_provisioning_pods_finder.find_pods()
 
-            logger.info(f"Wait until pod is ready")
-            _, waited_time = self._pods_creator.wait_until_pod_ready(pod_name)
-            logger.info(f"Waited time: {waited_time}\n")
-
-            pods_map_after_pod_creation = self._over_provisioning_pods_finder.find_pods()
-
-            if self.does_pods_changed_pods(pods_map, pods_map_after_pod_creation):
-                return True
+            if self.does_pods_changed_pods(initial_pods_map, current_pods_map):
+                test_result = True
+                break
 
             i += 1
 
+            if i > 40:
+                test_result = False
+                break
         amount_of_nodes_after_test = len(self._nodes_lister.find_all())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
+        return test_result
 
     @staticmethod
     def does_pods_changed_pods(initial_pods_nodes_map, pods_nodes_map):
