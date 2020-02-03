@@ -85,35 +85,6 @@ def wait_until_pod_is_ready(kuber: client.CoreV1Api, namespace: str, pod_name: s
         time.sleep(0.1)
 
 
-def test_over_provisioning(
-        kuber: client.CoreV1Api, configuration):
-    initial_amount_of_nodes = count_nodes_by_label_selector(kuber, configuration.NODES_LABEL_SELECTOR)
-
-    for i in range(1, configuration.AMOUNT_OF_PODS_TO_CREATE + 1):
-        pod_name = f"test-pod-{i}"
-        logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, execution_time = create_pod(kuber, configuration.NAMESPACE, pod_name)
-        logger.info(f"Pod creation time: {execution_time}")
-        logger.info(f"Wait until pod is ready")
-        _, waited_time = wait_until_pod_is_ready(kuber, configuration.NAMESPACE, pod_name)
-        logger.info(f"Waited time: {waited_time}\n")
-
-        if execution_time > configuration.MAX_POD_CREATION_TIME_IN_SECONDS:
-            logger.info("Pod creation time hit the limit. Test Failed")
-            return False
-
-        nodes_amount = count_nodes_by_label_selector(kuber, configuration.NODES_LABEL_SELECTOR)
-        if nodes_amount > initial_amount_of_nodes:
-            logger.info(f"Amount of nodes increased. Test Passed")
-            return True
-
-    logger.info(
-        f"{configuration.AMOUNT_OF_PODS_TO_CREATE} pods created, but amount of nodes still the same. Test Failed."
-    )
-    cleanup_pods(kuber, configuration.AMOUNT_OF_PODS_TO_CREATE, configuration.NAMESPACE)
-    return False
-
-
 class OverProvisioningPodsFinder:
     def find_pods(self) -> t.Dict[str, str]:
         """
@@ -136,9 +107,9 @@ class LabeledPodsFinder(OverProvisioningPodsFinder):
         return {pod.metadata.name: pod.status.host_ip for pod in pods_list.items}
 
 
-def test_over_provisioning_v2(kuber: client.CoreV1Api, over_provisioning_pods_finder: OverProvisioningPodsFinder,
-                              settings: Settings):
-    initial_amount_of_nodes = (kuber)
+def test_over_provisioning(kuber: client.CoreV1Api, over_provisioning_pods_finder: OverProvisioningPodsFinder,
+                           settings: Settings):
+    initial_amount_of_nodes = count_nodes_on_cluster(kuber)
     logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
     pods_map = over_provisioning_pods_finder.find_pods()
 
@@ -146,15 +117,15 @@ def test_over_provisioning_v2(kuber: client.CoreV1Api, over_provisioning_pods_fi
     while i < 10:  # todo: infinity instead of 10 here
         pod_name = f"test-pod-{i}"
         logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, execution_time = create_pod(kuber, settings.KUBERNETES_NAMESPACE, pod_name)
+        _, execution_time = create_pod(kuber, settings.kubernetes_namespace, pod_name)
         logger.info(f"Pod creation time: {execution_time}")
 
-        if execution_time > settings.MAX_POD_CREATION_TIME_IN_SECONDS:
+        if execution_time > settings.max_pod_creation_time_in_seconds:
             logger.info("Pod creation time hit the limit. Test Failed")
             return
 
         logger.info(f"Wait until pod is ready")
-        _, waited_time = wait_until_pod_is_ready(kuber, settings.KUBERNETES_NAMESPACE, pod_name)
+        _, waited_time = wait_until_pod_is_ready(kuber, settings.kubernetes_namespace, pod_name)
         logger.info(f"Waited time: {waited_time}\n")
 
         pods_map_after_pod_creation = over_provisioning_pods_finder.find_pods()
@@ -180,23 +151,16 @@ def delete_namespace(kuber: client.CoreV1Api, namespace: str):
     kuber.delete_namespace(namespace)
 
 
-def main():
-    settings = Settings("test-ns", 10, "over_provisioning")
-
-    kuber_config_file_path = "kube_config.yaml"
+def main(settings: Settings, kuber_config_file_path: str):
     kuber = create_kuber(kuber_config_file_path)
 
-    create_namespace(kuber, settings.KUBERNETES_NAMESPACE)
+    create_namespace(kuber, settings.kubernetes_namespace)
     time.sleep(2)
 
     pods_finder = LabeledPodsFinder(
-        kuber, namespace=settings.KUBERNETES_NAMESPACE,
-        label_selector=settings.NODES_LABEL_SELECTOR
+        kuber, namespace=settings.kubernetes_namespace,
+        label_selector=settings.nodes_label_selector
     )
-    test_over_provisioning_v2(kuber, pods_finder, settings)
+    test_over_provisioning(kuber, pods_finder, settings)
 
-    delete_namespace(kuber, settings.KUBERNETES_NAMESPACE)
-
-
-if __name__ == "__main__":
-    main()
+    delete_namespace(kuber, settings.kubernetes_namespace)
