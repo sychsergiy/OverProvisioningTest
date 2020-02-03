@@ -1,5 +1,8 @@
 # Over Provisioning Test
 
+Creates new pods with "nginx" until one of `over provisioning`
+ pods change his node(which mean tests passed). 
+
 To install dependencies:
 ```bash
 pip install -r requirements.txt
@@ -15,12 +18,14 @@ Options:
                                   Namespace where over provisioning test will
                                   be executed
   --create-new-namespace / --no-create-new-namespace
-                                  Create new kubernetes namespace. If not set,
-                                  test will try to find existent. By default
-                                  True
+                                  Create new kubernetes namespace or use
+                                  existent. By default True
   -t, --max-pod-creation-time FLOAT
                                   Max time for pod creation in seconds. If pod
                                   creation hit this limit test will fail
+  -l, --over-provisioning-pods-label-selector TEXT
+                                  Set label selector to find over provisioning
+                                  pods
   -s, --nodes-label-selector TEXT
                                   Label selector to filter nodes
   -p, --pods-to-create-quantity INTEGER
