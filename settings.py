@@ -12,7 +12,7 @@ class SettingsNoneAttributeException(Exception):
 
     @staticmethod
     def construct_option_name(attribute_name: str) -> str:
-        return "--" + '-'.join(attribute_name.split("_"))
+        return "--" + "-".join(attribute_name.split("_"))
 
     @staticmethod
     def construct_env_var_name(attribute_name: str) -> str:
@@ -21,14 +21,27 @@ class SettingsNoneAttributeException(Exception):
 
 class Settings:
     def __init__(
-            self,
-            kubernetes_namespace: str,
-            max_pod_creation_time_in_seconds: float,
-            nodes_label_selector: str
+        self,
+        kubernetes_namespace: str,
+        max_pod_creation_time_in_seconds: float,
+        nodes_label_selector: str,
+        over_provisioning_pods_label_selector: str,
     ):
         self.kubernetes_namespace = kubernetes_namespace
         self.max_pod_creation_time_in_seconds = max_pod_creation_time_in_seconds
         self.nodes_label_selector = nodes_label_selector
+        self.over_provisioning_pods_label_selector = (
+            over_provisioning_pods_label_selector
+        )
+
+    @property
+    def over_provisioning_pods_label_selector(self):
+        return self._over_provisioning_pods_label_selector
+
+    @over_provisioning_pods_label_selector.setter
+    def over_provisioning_pods_label_selector(self, value):
+        self._validate_not_none(value, "over_provisioning_pods_label_selector")
+        self._over_provisioning_pods_label_selector = value
 
     @property
     def kubernetes_namespace(self):

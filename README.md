@@ -36,12 +36,15 @@ Example of usage with full command options:
 python cli.py kube_config.yaml \
     --kubernetes-namespace=test-ns-0  \
     --max-pod-creation-time=60 \
+    --over-provisioning-pods-label-selector=test_over_prov_pods_label_selector \
     --nodes-label-selector=over_prov_pod  \
     --no-create-new-namespace
 ```
 Example of usage with full command options shortcuts:
 ```bash
-python cli.py kube_config.yaml -n test-ns-0 -t 60 -s over_prov_pod --create-new-namespace
+python cli.py kube_config.yaml \
+    -n test-ns-0 -t 60 -l test_over_prov_pods_label_selector \
+    -s over_prov_pod --create-new-namespace
 ```
 
 All options also can be passed with environment variables(uppercased and underscores instead of dashes).
@@ -50,6 +53,7 @@ Usage with env vars:
 export KUBERNETES_CONF_PATH="kube_config.yaml"
 export KUBERNETES_NAMESPACE="test-ns"
 export MAX_POD_CREATION_TIME_IN_SECONDS=60
+export OVER_PROVISIONING_PODS_LABEL_SELECTOR="test_over_prov_pods_label_selector"
 export NODES_LABEL_SELECTOR="test_nodes_selector"
 
 python cli.py --no-create-new-namespace

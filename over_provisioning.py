@@ -28,17 +28,18 @@ def create_kuber(config_file_path=None):
 
 
 class NodesLister:
-    def __init__(self, kuber: client.CoreV1Api):
+    def __init__(self, kuber: client.CoreV1Api, label_selector: str):
         self._kuber = kuber
+        self._label_selector = label_selector
 
-    def find_by_label_selector(self, label_selector: str):
+    def find_by_label_selector(self):
         """
         label_selector variations:
           only label key: "label_key"
           label key with value: "label_key=label_value"
           list of mixed labels: "label_key,label_key_2=label_value"
         """
-        nodes = self._kuber.list_node(label_selector=label_selector)
+        nodes = self._kuber.list_node(label_selector=self._label_selector)
         return nodes.items
 
     def find_all(self):
@@ -123,19 +124,22 @@ class PodsCreator:
 
 class OverProvisioningTest:
     def __init__(
-            self,
-            pods_creator: PodsCreator,
-            over_provisioning_pods_finder: OverProvisioningPodsFinder,
-            nodes_lister: NodesLister,
-            pods_to_create_quantity: int = None
+        self,
+        pods_creator: PodsCreator,
+        over_provisioning_pods_finder: OverProvisioningPodsFinder,
+        nodes_lister: NodesLister,
+        pods_to_create_quantity: int = None,
     ):
         self._pods_creator = pods_creator
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_lister = nodes_lister
 
-        self._pods_to_create_quantity = pods_to_create_quantity # will be not used if None
+        # will be not used if None
+        self._pods_to_create_quantity = pods_to_create_quantity
 
-    def _create_pod_and_until_ready(self, pod_name: str, max_pod_creation_time_in_seconds: float) -> bool:
+    def _create_pod_and_until_ready(
+        self, pod_name: str, max_pod_creation_time_in_seconds: float
+    ) -> bool:
         logger.info(f"Init pod creation. Pod name: {pod_name}")
         _, execution_time = self._pods_creator.create_pod(pod_name)
         logger.info(f"Pod creation time: {execution_time}")
@@ -150,14 +154,16 @@ class OverProvisioningTest:
         return True
 
     def run(self, max_pod_creation_time_in_seconds) -> bool:
-        initial_amount_of_nodes = len(self._nodes_lister.find_all())
+        initial_amount_of_nodes = len(self._nodes_lister.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
         initial_pods_map = self._over_provisioning_pods_finder.find_pods()
 
         i = 1
         while True:
             pod_name = f"test-pod-{i}"
-            if not self._create_pod_and_until_ready(pod_name, max_pod_creation_time_in_seconds):
+            if not self._create_pod_and_until_ready(
+                pod_name, max_pod_creation_time_in_seconds
+            ):
                 test_result = False
                 break
 
@@ -169,13 +175,15 @@ class OverProvisioningTest:
 
             if self._pods_to_create_quantity:
                 if i > self._pods_to_create_quantity:
-                    logger.info("Finish the test because of hit the limit of pods quantity")
+                    logger.info(
+                        "Finish the test because of hit the limit of pods quantity"
+                    )
                     test_result = False
                     break
 
             i += 1
 
-        amount_of_nodes_after_test = len(self._nodes_lister.find_all())
+        amount_of_nodes_after_test = len(self._nodes_lister.find_by_label_selector())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
         return test_result
 
@@ -188,17 +196,18 @@ class OverProvisioningTest:
                     f"Pod with name: {pod_name} change his node."
                     f" The initial node: {initial_node_name}, current value: {node_name}"
                 )
-                if node_name is None:  # todo: check value of node_name field when node is not setuped
+                # todo: check value of node_name field when node is not setuped
+                if node_name is None:
                     raise NotImplementedError("Implement wait until nodes setuped")
                 return True
         return False
 
 
 def main(
-        kuber_namespace: KuberNamespace,
-        create_new_namespace: bool,
-        test_runner: OverProvisioningTest,
-        max_pod_creation_time_in_seconds: float,
+    kuber_namespace: KuberNamespace,
+    create_new_namespace: bool,
+    test_runner: OverProvisioningTest,
+    max_pod_creation_time_in_seconds: float,
 ):
     if create_new_namespace:
         kuber_namespace.create()
