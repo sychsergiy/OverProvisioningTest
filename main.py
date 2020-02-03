@@ -2,6 +2,8 @@ import typing as t
 import time
 import logging
 
+import kubernetes.client.rest
+
 from pprint import pprint
 
 from kubernetes import client, config
@@ -151,11 +153,25 @@ def delete_namespace(kuber: client.CoreV1Api, namespace: str):
     kuber.delete_namespace(namespace)
 
 
-def main(settings: Settings, kuber_config_file_path: str):
-    kuber = create_kuber(kuber_config_file_path)
+def is_namespace_exists(kuber: client.CoreV1Api, name: str) -> bool:
+    try:
+        kuber.read_namespace(name)
+    except client.rest.ApiException as e:
+        if e.status == 404:
+            return False
+        else:
+            raise e
+    return True
 
-    create_namespace(kuber, settings.kubernetes_namespace)
-    time.sleep(2)
+
+def main(settings: Settings, kuber_config_file_path: str, create_new_namespace):
+    kuber = create_kuber(kuber_config_file_path)
+    if create_new_namespace:
+        create_namespace(kuber, settings.kubernetes_namespace)
+        time.sleep(1)
+    else:
+        if not is_namespace_exists(kuber, settings.kubernetes_namespace):
+            raise RuntimeError(f"Provided namespace: {settings.kubernetes_namespace} doesnt exists.")
 
     pods_finder = LabeledPodsFinder(
         kuber, namespace=settings.kubernetes_namespace,
