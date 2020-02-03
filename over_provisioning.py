@@ -129,10 +129,13 @@ class OverProvisioningTest:
             pods_creator: PodsCreator,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
             nodes_lister: NodesLister,
+            pods_to_create_quantity: int = None
     ):
         self._pods_creator = pods_creator
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_lister = nodes_lister
+
+        self._pods_to_create_quantity = pods_to_create_quantity # will be not used if None
 
     def _create_pod_and_until_ready(self, pod_name: str, max_pod_creation_time_in_seconds: float) -> bool:
         logger.info(f"Init pod creation. Pod name: {pod_name}")
@@ -166,11 +169,14 @@ class OverProvisioningTest:
                 test_result = True
                 break
 
+            if self._pods_to_create_quantity:
+                if i > self._pods_to_create_quantity:
+                    logger.info("Finish the test because of hit the limit of pods quantity")
+                    test_result = False
+                    break
+
             i += 1
 
-            if i > 40:
-                test_result = False
-                break
         amount_of_nodes_after_test = len(self._nodes_lister.find_all())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
         return test_result
@@ -198,9 +204,14 @@ def main(
 ):
     if create_new_namespace:
         kuber_namespace.create()
-        time.sleep(1)
+        time.sleep(2)
     else:
         kuber_namespace.check_if_exists()
 
-    test_runner.run(max_pod_creation_time_in_seconds)
+    result = test_runner.run(max_pod_creation_time_in_seconds)
+    if result:
+        logger.info("Test pass ......................")
+    else:
+        logger.info("Test failed ....................")
+
     kuber_namespace.delete()

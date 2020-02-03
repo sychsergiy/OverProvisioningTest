@@ -26,12 +26,17 @@ from settings import Settings
     "-s", "--nodes-label-selector", envvar="NODES_LABEL_SELECTOR", type=click.STRING,
     help="Label selector to filter nodes",
 )
+@click.option(
+    "-p", "--pods-to-create-quantity", type=click.INT, default=None,
+    help="Quantity pods to create before finishing test. Created only for local running(to finish test)",
+)
 def run(
         kubernetes_conf_path,
         kubernetes_namespace,
         max_pod_creation_time,
         nodes_label_selector,
-        create_new_namespace
+        create_new_namespace,
+        pods_to_create_quantity,
 ):
     settings = Settings(kubernetes_namespace, max_pod_creation_time, nodes_label_selector)
     kuber = create_kuber(kubernetes_conf_path)
@@ -43,7 +48,9 @@ def run(
     pods_creator = PodsCreator(kuber, settings.kubernetes_namespace)
     nodes_lister = NodesLister(kuber)
 
-    test_runner = OverProvisioningTest(pods_creator, over_provisioning_pods_finder, nodes_lister)
+    test_runner = OverProvisioningTest(
+        pods_creator, over_provisioning_pods_finder, nodes_lister, pods_to_create_quantity
+    )
 
     main(
         kubernetes_namespace_instance,
