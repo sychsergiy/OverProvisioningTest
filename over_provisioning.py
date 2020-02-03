@@ -6,8 +6,6 @@ import kubernetes.client.rest
 
 from kubernetes import client, config
 
-from settings import Settings
-
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 

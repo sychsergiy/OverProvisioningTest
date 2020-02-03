@@ -16,10 +16,10 @@ from settings import Settings
 )
 @click.option(
     "--create-new-namespace/--no-create-new-namespace", default=True,
-    help="Create new kubernetes namespace. If not set, test will try to find existent. By default True",
+    help="Create new kubernetes namespace or use existent. By default True",
 )
 @click.option(
-    "-t", "--max-pod-creation-time", envvar="MAX_POD_CREATION_TIME", type=click.FLOAT,
+    "-t", "--max-pod-creation-time", envvar="MAX_POD_CREATION_TIME_IN_SECONDS", type=click.FLOAT,
     help="Max time for pod creation in seconds. If pod creation hit this limit test will fail"
 )
 @click.option(
