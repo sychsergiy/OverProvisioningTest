@@ -61,6 +61,30 @@ def count_nodes_by_label_selector(kuber: client.CoreV1Api, label_selector: str):
     return len(list_nodes_filtered_by_label_selector(kuber, label_selector))
 
 
+class KuberNamespace:
+    def __init__(self, kuber: client.CoreV1Api, name: str):
+        self._kuber = kuber
+        self._name = name
+
+    def create(self):
+        return self._kuber.create_namespace(
+            client.V1Namespace(metadata=client.V1ObjectMeta(name=self._name))
+        )
+
+    def delete(self):
+        return self._kuber.delete_namespace(self._name)
+
+    def is_exists(self):
+        try:
+            self._kuber.read_namespace(self._name)
+        except client.rest.ApiException as e:
+            if e.status == 404:
+                return False
+            else:
+                raise e
+        return True
+
+
 class OverProvisioningPodsFinder:
     def find_pods(self) -> t.Dict[str, str]:
         """
@@ -163,13 +187,13 @@ def is_namespace_exists(kuber: client.CoreV1Api, name: str) -> bool:
     return True
 
 
-def main(settings: Settings, kuber_config_file_path: str, create_new_namespace):
+def main(settings: Settings, kuber_config_file_path: str, kuber_namespace: KuberNamespace, create_new_namespace: bool):
     kuber = create_kuber(kuber_config_file_path)
     if create_new_namespace:
-        create_namespace(kuber, settings.kubernetes_namespace)
+        kuber_namespace.create()
         time.sleep(1)
     else:
-        if not is_namespace_exists(kuber, settings.kubernetes_namespace):
+        if not kuber_namespace.is_exists():
             raise RuntimeError(f"Provided namespace: {settings.kubernetes_namespace} doesnt exists.")
 
     over_provisioning_pods_finder = LabeledPodsFinder(
@@ -178,4 +202,5 @@ def main(settings: Settings, kuber_config_file_path: str, create_new_namespace):
     )
     pods_creator = PodsCreator(kuber, settings.kubernetes_namespace)
     test_over_provisioning(kuber, pods_creator, over_provisioning_pods_finder, settings)
-    delete_namespace(kuber, settings.kubernetes_namespace)
+
+    kuber_namespace.delete()

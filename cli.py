@@ -1,6 +1,6 @@
 import click
 
-from over_provisioning import main
+from over_provisioning import main, KuberNamespace, create_kuber
 
 from settings import Settings
 
@@ -33,7 +33,12 @@ def run(
         create_new_namespace
 ):
     settings = Settings(kubernetes_namespace, max_pod_creation_time, nodes_label_selector)
-    main(settings, kubernetes_conf_path, create_new_namespace)
+
+    kuber = create_kuber(kubernetes_conf_path)
+
+    kubernetes_namespace_instance = KuberNamespace(kuber, kubernetes_namespace)
+
+    main(settings, kubernetes_conf_path, kubernetes_namespace_instance, create_new_namespace)
 
 
 if __name__ == "__main__":
