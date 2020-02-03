@@ -1,0 +1,42 @@
+@startuml
+
+(*) --> "find inital amount of nodes"
+--> "find all OverProvisoning pods(and nodes for them)"
+--> "create new pod"
+--> "wait on Running pod status"
+--> "Calculate pod creation time"
+
+
+if "Pod creation time > X" then
+    /'
+    We are creating pods until existent node is overwhelmed
+    If over provisioner is working:
+        pods will be moved to other Nodes
+    else
+        Only one node will be used, so creating new Pod will take too much time
+        We are parametrizing time to create pod(1 minute for now).
+
+        If pod creation time hit this limit test is failed.
+    '/
+    -->[true] "Test Failed"
+    -->(*)
+else
+    -->[false] if "Check node updated" then
+        -->[true] "Iterate each updated node"
+        if "Node setuped" then
+            -->[true] "?Compare with initial?"
+        else
+            -->[false] "Wait on node setup"
+            --> "?Compare with initial?"
+        endif
+    else
+        -->[false] "create new pod"
+    endif
+endif
+
+"?Compare with initial?" --> "find amount of nodes"
+--> "Cleanup Pods"
+--> "Test Passed"
+--> (*)
+
+@enduml
