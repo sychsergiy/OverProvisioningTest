@@ -1,6 +1,6 @@
 import click
 
-from main import main
+from over_provisioning import main
 
 from settings import Settings
 
