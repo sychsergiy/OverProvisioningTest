@@ -140,7 +140,7 @@ class OverProvisioningTest:
         pods_map = self._over_provisioning_pods_finder.find_pods()
 
         i = 1
-        while i < 30:  # todo: infinity instead of 10 here
+        while i < True:
             pod_name = f"test-pod-{i}"
             logger.info(f"Init pod creation. Pod name: {pod_name}")
             _, execution_time = self._pods_creator.create_pod(pod_name)
