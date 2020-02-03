@@ -90,8 +90,8 @@ class LabeledPodsFinder(OverProvisioningPodsFinder):
         pods_list: client.models.v1_pod_list.V1PodList = self.kuber.list_namespaced_pod(
             self.namespace, label_selector=self.label_selector
         )
-        # todo: use node name instead of host_IP
-        return {pod.metadata.name: pod.status.host_ip for pod in pods_list.items}
+        # todo: try to use node name instead of host_IP
+        return {pod.metadata.name: pod.spec.node_name for pod in pods_list.items}
 
 
 class PodsCreator:
@@ -140,7 +140,7 @@ class OverProvisioningTest:
         pods_map = self._over_provisioning_pods_finder.find_pods()
 
         i = 1
-        while i < 10:  # todo: infinity instead of 10 here
+        while i < 30:  # todo: infinity instead of 10 here
             pod_name = f"test-pod-{i}"
             logger.info(f"Init pod creation. Pod name: {pod_name}")
             _, execution_time = self._pods_creator.create_pod(pod_name)
@@ -156,51 +156,27 @@ class OverProvisioningTest:
 
             pods_map_after_pod_creation = self._over_provisioning_pods_finder.find_pods()
 
-            if pods_map != pods_map_after_pod_creation:
-                logger.info(f"One of the over provisioning pods changed the node")  # should not be triggered locally
-                return
+            if self.does_pods_changed_pods(pods_map, pods_map_after_pod_creation):
+                return True
 
             i += 1
 
         amount_of_nodes_after_test = len(self._nodes_lister.find_all())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
 
-
-def test_over_provisioning(
-        pods_creator: PodsCreator,
-        over_provisioning_pods_finder: OverProvisioningPodsFinder,
-        nodes_lister: NodesLister,
-        max_pod_creation_time_in_seconds: float
-):
-    initial_amount_of_nodes = len(nodes_lister.find_all())
-    logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
-    pods_map = over_provisioning_pods_finder.find_pods()
-
-    i = 1
-    while i < 10:  # todo: infinity instead of 10 here
-        pod_name = f"test-pod-{i}"
-        logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, execution_time = pods_creator.create_pod(pod_name)
-        logger.info(f"Pod creation time: {execution_time}")
-
-        if execution_time > max_pod_creation_time_in_seconds:
-            logger.info("Pod creation time hit the limit. Test Failed")
-            return
-
-        logger.info(f"Wait until pod is ready")
-        _, waited_time = pods_creator.wait_until_pod_ready(pod_name)
-        logger.info(f"Waited time: {waited_time}\n")
-
-        pods_map_after_pod_creation = over_provisioning_pods_finder.find_pods()
-
-        if pods_map != pods_map_after_pod_creation:
-            logger.info(f"One of the over provisioning pods changed the node")  # should not be triggered locally
-            return
-
-        i += 1
-
-    amount_of_nodes_after_test = len(nodes_lister.find_all())
-    logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
+    @staticmethod
+    def does_pods_changed_pods(initial_pods_nodes_map, pods_nodes_map):
+        for pod_name, node_name in pods_nodes_map.items():
+            initial_node_name = initial_pods_nodes_map[pod_name]
+            if initial_node_name != node_name:
+                logger.info(
+                    f"Pod with name: {pod_name} change his node."
+                    f" The initial node: {initial_node_name}, current value: {node_name}"
+                )
+                if node_name is None:  # todo: check value of node_name field when node is not setuped
+                    raise NotImplementedError("Implement wait until nodes setuped")
+                return True
+        return False
 
 
 def main(
@@ -216,5 +192,4 @@ def main(
         kuber_namespace.check_if_exists()
 
     test_runner.run(max_pod_creation_time_in_seconds)
-
     kuber_namespace.delete()
