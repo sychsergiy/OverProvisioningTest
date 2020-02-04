@@ -221,4 +221,5 @@ def main(
     else:
         logger.info("Test failed ....................")
 
-    kuber_namespace.delete()
+    if not create_new_namespace:
+        kuber_namespace.delete()
