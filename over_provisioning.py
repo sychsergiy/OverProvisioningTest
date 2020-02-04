@@ -124,11 +124,11 @@ class PodsCreator:
 
 class OverProvisioningTest:
     def __init__(
-        self,
-        pods_creator: PodsCreator,
-        over_provisioning_pods_finder: OverProvisioningPodsFinder,
-        nodes_lister: NodesLister,
-        pods_to_create_quantity: int = None,
+            self,
+            pods_creator: PodsCreator,
+            over_provisioning_pods_finder: OverProvisioningPodsFinder,
+            nodes_lister: NodesLister,
+            pods_to_create_quantity: int = None,
     ):
         self._pods_creator = pods_creator
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
@@ -138,7 +138,7 @@ class OverProvisioningTest:
         self._pods_to_create_quantity = pods_to_create_quantity
 
     def _create_pod_and_until_ready(
-        self, pod_name: str, max_pod_creation_time_in_seconds: float
+            self, pod_name: str, max_pod_creation_time_in_seconds: float
     ) -> bool:
         logger.info(f"Init pod creation. Pod name: {pod_name}")
         _, execution_time = self._pods_creator.create_pod(pod_name)
@@ -156,20 +156,20 @@ class OverProvisioningTest:
     def run(self, max_pod_creation_time_in_seconds) -> bool:
         initial_amount_of_nodes = len(self._nodes_lister.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
-        initial_pods_map = self._over_provisioning_pods_finder.find_pods()
 
         i = 1
         while True:
             pod_name = f"test-pod-{i}"
+            initial_pods_map = self._over_provisioning_pods_finder.find_pods()
             if not self._create_pod_and_until_ready(
-                pod_name, max_pod_creation_time_in_seconds
+                    pod_name, max_pod_creation_time_in_seconds
             ):
                 test_result = False
                 break
 
             current_pods_map = self._over_provisioning_pods_finder.find_pods()
 
-            if self.does_pods_changed_pods(initial_pods_map, current_pods_map):
+            if self.does_pods_changed_nodes(initial_pods_map, current_pods_map):
                 test_result = True
                 break
 
@@ -188,9 +188,25 @@ class OverProvisioningTest:
         return test_result
 
     @staticmethod
-    def does_pods_changed_pods(initial_pods_nodes_map, pods_nodes_map):
-        for pod_name, node_name in pods_nodes_map.items():
-            initial_node_name = initial_pods_nodes_map[pod_name]
+    def does_pods_changed_nodes(initial_pods_nodes_map, current_pods_nodes_map):
+        import json
+        import sys
+
+        for pod_name, node_name in current_pods_nodes_map.items():
+            initial_node_name = initial_pods_nodes_map.get(pod_name)
+            if not initial_node_name:
+                logger.info(
+                    f"Found diff between pods(with nodes) before pod creation and after"
+                )
+                logger.info(f"Current node_name:{node_name}, current_pod_name: {pod_name}")
+                logger.info(f"Current node_name type:{type(node_name)}, current_pod_name type: {type(pod_name)}")
+
+                logger.info(f"Before: \n{json.dumps(initial_pods_nodes_map)}\n")
+                logger.info(f"After: \n{json.dumps(current_pods_nodes_map)}\n")
+                logger.critical("Found over pods changed. Not expected behaviour")
+                sys.exit(1)
+
+
             if initial_node_name != node_name:
                 logger.info(
                     f"Pod with name: {pod_name} change his node."
