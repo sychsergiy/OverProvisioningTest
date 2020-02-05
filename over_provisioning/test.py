@@ -1,6 +1,7 @@
 import time
 import enum
 import logging
+import sys
 
 from kubernetes import client, config
 
@@ -43,15 +44,27 @@ class OverProvisioningTest:
         self._pods_to_create_quantity = pods_to_create_quantity
 
     def _find_over_provisioning_pod(self) -> Pod:
-        pods_map = self._over_provisioning_pods_finder.find_pods()
-        pods_quantity = len(pods_map)
+        pods = self._over_provisioning_pods_finder.find_pods()
+        pods_quantity = len(pods)
 
         if pods_quantity == 0:
             raise RuntimeError(f"Unexpected behaviour. Over provisioning pod not found.")
-        if pods_quantity > 1:
+        elif pods_quantity == 1:
+            return pods[0]
+        elif pods_quantity == 2:
+            # check node one of the pods with unassigned pods
+            first_pod, second_pod = pods
+            if first_pod.node_name is None:
+                self._pod_creator.wait_until_node_assigned(first_pod.name)
+            elif second_pod.node_name is None:
+                self._pod_creator.wait_until_node_assigned(second_pod.name)
+            else:
+                raise RuntimeError(
+                    f"Unexpected behaviour. Only two over provisioning pods can be present at the same time."
+                    f"The first one the second with unassigned node. Found two with assigned nodes"
+                )
+        else:
             raise RuntimeError(f"Unexpected behaviour. One over provisioning pod expected, found: {pods_quantity}")
-
-        return pods_map[0]
 
     def _does_over_provisioning_pod_changed_name_and_node(self, pod: Pod) -> bool:
         """
@@ -87,7 +100,7 @@ class OverProvisioningTest:
     def _construct_pod_name(pod_sequence_number: int):
         return f"test-pod-{pod_sequence_number}"
 
-    def _run_creating_pod_loop(self, max_pod_creation_time_in_seconds: float):
+    def _run_creating_pod_loop(self, max_pod_creation_time_in_seconds: float) -> bool:
         i = 1
         while True:
             pod_name_to_create = self._construct_pod_name(i)
@@ -134,10 +147,14 @@ def run_test(
         kuber_namespace.check_if_exists()
 
     result = over_provisioning_test.run(max_pod_creation_time_in_seconds)
-    if result:
-        logger.info("Test pass ......................")
-    else:
-        logger.info("Test failed ....................")
 
     if create_new_namespace:
         kuber_namespace.delete()
+
+    if result:
+        logger.info("Test pass ......................")
+        sys.exit(0)
+    else:
+        logger.info("Test failed ....................")
+        sys.exit(1)
+

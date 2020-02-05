@@ -26,6 +26,15 @@ class PodCreator:
         if not self.is_pod_ready(pod):
             time.sleep(0.1)
 
+    def wait_until_node_assigned(self, pod_name: str):
+        pod = self._kuber.read_namespaced_pod(pod_name, self._namespace)
+        if not self.is_node_assigned(pod):
+            time.sleep(0.1)
+
+    @staticmethod
+    def is_node_assigned(pod) -> bool:
+        return pod.spec.node_name is not None
+
     @staticmethod
     def is_pod_ready(pod) -> bool:
         if not pod.status.conditions:
