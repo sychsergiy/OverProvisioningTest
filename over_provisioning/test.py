@@ -20,10 +20,10 @@ def create_kuber(config_file_path=None):
     return kuber
 
 
-class OverProvisioningTest:
+class OneOverProvisioningPodTest:
     class IterationResult(enum.Enum):
-        POD_CREATION_TIME_HIT_THE_LIMIT = 1
-        OVER_PROVISIONING_POD_CHANGED_NODE = 3
+        POD_CREATION_TIME_HIT_THE_LIMIT = "POD_CREATION_TIME_HIT_THE_LIMIT"
+        OVER_PROVISIONING_POD_CHANGED_NODE = "OVER_PROVISIONING_POD_CHANGED_NODE"
 
     """
     Current version of test will work's only when one over provisioning pod is present in namespace.
@@ -137,7 +137,7 @@ class OverProvisioningTest:
 def run_test(
         kuber_namespace: KuberNamespace,
         create_new_namespace: bool,
-        over_provisioning_test: OverProvisioningTest,
+        over_provisioning_test: OneOverProvisioningPodTest,
         max_pod_creation_time_in_seconds: float,
 ):
     if create_new_namespace:

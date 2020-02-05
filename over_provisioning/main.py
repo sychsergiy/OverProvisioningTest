@@ -3,7 +3,7 @@ from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodCreator
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
-from over_provisioning.test import create_kuber, OverProvisioningTest, run_test
+from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
 
 
 def main(
@@ -32,7 +32,7 @@ def main(
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
-    test_runner = OverProvisioningTest(
+    test_runner = OneOverProvisioningPodTest(
         pod_creator,
         over_provisioning_pods_finder,
         nodes_finder,
