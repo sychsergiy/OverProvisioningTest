@@ -1,15 +1,6 @@
 import click
 
-from over_provisioning.kuber_namespace import KuberNamespace
-from over_provisioning.test_runner import (
-    main,
-    create_kuber,
-    OverProvisioningTestRunner,
-)
-from over_provisioning.pod_creator import PodCreator
-from over_provisioning.pods_finder import LabeledPodsFinder
-from over_provisioning.nodes_finder import NodesFinder
-from over_provisioning.settings import Settings
+from over_provisioning.main import main
 
 
 @click.command()
@@ -65,35 +56,14 @@ def run(
     create_new_namespace: bool,
     pods_to_create_quantity: int,
 ):
-    settings = Settings(
+    main(
+        kubernetes_conf_path,
         kubernetes_namespace,
         max_pod_creation_time,
-        nodes_label_selector,
         over_provisioning_pods_label_selector,
-    )
-    kuber = create_kuber(kubernetes_conf_path)
-
-    kubernetes_namespace_instance = KuberNamespace(kuber, kubernetes_namespace)
-    over_provisioning_pods_finder = LabeledPodsFinder(
-        kuber,
-        namespace=settings.kubernetes_namespace,
-        label_selector=settings.over_provisioning_pods_label_selector,
-    )
-    pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
-    nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
-
-    test_runner = OverProvisioningTestRunner(
-        pod_creator,
-        over_provisioning_pods_finder,
-        nodes_finder,
-        pods_to_create_quantity,
-    )
-
-    main(
-        kubernetes_namespace_instance,
+        nodes_label_selector,
         create_new_namespace,
-        test_runner,
-        settings.max_pod_creation_time_in_seconds,
+        pods_to_create_quantity
     )
 
 

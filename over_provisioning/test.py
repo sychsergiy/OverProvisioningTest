@@ -18,7 +18,7 @@ def create_kuber(config_file_path=None):
     return kuber
 
 
-class OverProvisioningTestRunner:
+class OverProvisioningTest:
     def __init__(
             self,
             pod_creator: PodCreator,
@@ -114,10 +114,10 @@ class OverProvisioningTestRunner:
         return False
 
 
-def main(
+def run_test(
         kuber_namespace: KuberNamespace,
         create_new_namespace: bool,
-        test_runner: OverProvisioningTestRunner,
+        over_provisioning_test: OverProvisioningTest,
         max_pod_creation_time_in_seconds: float,
 ):
     if create_new_namespace:
@@ -126,7 +126,7 @@ def main(
     else:
         kuber_namespace.check_if_exists()
 
-    result = test_runner.run(max_pod_creation_time_in_seconds)
+    result = over_provisioning_test.run(max_pod_creation_time_in_seconds)
     if result:
         logger.info("Test pass ......................")
     else:
