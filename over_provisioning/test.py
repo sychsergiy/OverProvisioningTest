@@ -6,7 +6,7 @@ from kubernetes import client, config
 from over_provisioning.kuber_namespace import KuberNamespace
 from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodCreator
-from over_provisioning.pods_finder import OverProvisioningPodsFinder
+from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -19,6 +19,10 @@ def create_kuber(config_file_path=None):
 
 
 class OverProvisioningTest:
+    """
+    Current version of test will work's only when one over provisioning pod is present in namespace.
+    """
+
     def __init__(
             self,
             pod_creator: PodCreator,
@@ -33,7 +37,7 @@ class OverProvisioningTest:
         # will be not used if None
         self._pods_to_create_quantity = pods_to_create_quantity
 
-    def _create_pod_and_until_ready(
+    def _create_pod_and_wait_until_ready(
             self, pod_name: str, max_pod_creation_time_in_seconds: float
     ) -> bool:
         logger.info(f"Init pod creation. Pod name: {pod_name}")
@@ -49,6 +53,28 @@ class OverProvisioningTest:
         logger.info(f"Waited time: {waited_time}\n")
         return True
 
+    def _find_over_provisioning_pod(self) -> Pod:
+        pods_map = self._over_provisioning_pods_finder.find_pods()
+        pods_quantity = len(pods_map)
+
+        if pods_quantity == 0:
+            raise RuntimeError(f"Unexpected behaviour. Over provisioning pod not found.")
+        if pods_quantity > 1:
+            raise RuntimeError(f"Unexpected behaviour. One over provisioning pod expected, found: {pods_quantity}")
+
+        return pods_map[0]
+
+    def _does_over_provisioning_pod_changed_name_and_node(self, pod: Pod) -> bool:
+        """
+        Except of reassigning node, pod name will be also changed
+        Because to move pod to another node Kubernetes
+          it creates new pod(with new name and unassigned node) and deleting the old one,
+          then waiting on new node creation
+          then assign's newly created node to newly created pod
+        """
+        over_provisioning_pod = self._find_over_provisioning_pod()
+        return pod.name != over_provisioning_pod.name and pod.node_name != over_provisioning_pod.node_name
+
     def run(self, max_pod_creation_time_in_seconds) -> bool:
         initial_amount_of_nodes = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
@@ -56,16 +82,16 @@ class OverProvisioningTest:
         i = 1
         while True:
             pod_name = f"test-pod-{i}"
-            initial_pods_map = self._over_provisioning_pods_finder.find_pods()
-            if not self._create_pod_and_until_ready(
+
+            over_provisioning_pod = self._find_over_provisioning_pod()
+
+            if not self._create_pod_and_wait_until_ready(
                     pod_name, max_pod_creation_time_in_seconds
             ):
                 test_result = False
                 break
 
-            current_pods_map = self._over_provisioning_pods_finder.find_pods()
-
-            if self.does_pods_changed_nodes(initial_pods_map, current_pods_map):
+            if self._does_over_provisioning_pod_changed_name_and_node(over_provisioning_pod):
                 test_result = True
                 break
 
@@ -82,36 +108,6 @@ class OverProvisioningTest:
         amount_of_nodes_after_test = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
         return test_result
-
-    @staticmethod
-    def does_pods_changed_nodes(initial_pods_nodes_map, current_pods_nodes_map):
-        import json
-        import sys
-
-        for pod_name, node_name in current_pods_nodes_map.items():
-            initial_node_name = initial_pods_nodes_map.get(pod_name)
-            if not initial_node_name:
-                logger.info(
-                    f"Found diff between pods(with nodes) before pod creation and after"
-                )
-                logger.info(f"Current node_name:{node_name}, current_pod_name: {pod_name}")
-                logger.info(f"Current node_name type:{type(node_name)}, current_pod_name type: {type(pod_name)}")
-
-                logger.info(f"Before: \n{json.dumps(initial_pods_nodes_map)}\n")
-                logger.info(f"After: \n{json.dumps(current_pods_nodes_map)}\n")
-                logger.critical("Found over pods changed. Not expected behaviour")
-                sys.exit(1)
-
-            if initial_node_name != node_name:
-                logger.info(
-                    f"Pod with name: {pod_name} change his node."
-                    f" The initial node: {initial_node_name}, current value: {node_name}"
-                )
-                # todo: check value of node_name field when node is not setuped
-                if node_name is None:
-                    raise NotImplementedError("Implement wait until nodes setuped")
-                return True
-        return False
 
 
 def run_test(

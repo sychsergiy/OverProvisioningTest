@@ -3,8 +3,13 @@ import typing as t
 from kubernetes import client
 
 
+class Pod(t.NamedTuple):
+    name: str
+    node_name: str
+
+
 class OverProvisioningPodsFinder:
-    def find_pods(self) -> t.Dict[str, str]:
+    def find_pods(self) -> t.List[Pod]:
         """
         map where key is pod name, value is node name
         """
@@ -17,9 +22,8 @@ class LabeledPodsFinder(OverProvisioningPodsFinder):
         self.label_selector = label_selector
         self.namespace = namespace
 
-    def find_pods(self) -> t.Dict[str, str]:
+    def find_pods(self) -> t.List[Pod]:
         pods_list: client.models.v1_pod_list.V1PodList = self.kuber.list_namespaced_pod(
             self.namespace, label_selector=self.label_selector
         )
-        # todo: try to use node name instead of host_IP
-        return {pod.metadata.name: pod.spec.node_name for pod in pods_list.items}
+        return [Pod(pod.metadata.name, pod.spec.node_name) for pod in pods_list.items]
