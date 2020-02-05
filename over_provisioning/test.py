@@ -1,13 +1,10 @@
-import time
 import enum
 import logging
 import sys
 
 from kubernetes import client, config
 
-from over_provisioning.environment_setuper import EnvironmentSetuper, CreateNamespaceHook, DeleteNamespaceHook, \
-    CheckNamespaceExistsHook
-from over_provisioning.kuber_namespace import KuberNamespace
+from over_provisioning.environment_setuper import EnvironmentSetuper
 from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodCreator
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
@@ -115,11 +112,15 @@ class PodCreatingLoop:
             return pods[0]
         elif pods_quantity == 2:
             # check node one of the pods with unassigned pods
+            logger.info(f"Pods: {str(pods)}")
             first_pod, second_pod = pods
             if first_pod.node_name is None:
-                self._pod_creator.wait_until_node_assigned(first_pod.name)
+                self._over_provisioning_pods_finder.wait_until_node_assigned(first_pod.name)
+                return self._find_over_provisioning_pod()
+
             elif second_pod.node_name is None:
-                self._pod_creator.wait_until_node_assigned(second_pod.name)
+                self._over_provisioning_pods_finder.wait_until_node_assigned(second_pod.name)
+                return self._find_over_provisioning_pod()
             else:
                 raise RuntimeError(
                     f"Unexpected behaviour. Only two over provisioning pods can be present at the same time."

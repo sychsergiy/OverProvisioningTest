@@ -1,3 +1,4 @@
+import time
 import typing as t
 
 from kubernetes import client
@@ -15,15 +16,30 @@ class OverProvisioningPodsFinder:
         """
         raise NotImplementedError()
 
+    def wait_until_node_assigned(self, pod_name: str):
+        raise NotImplementedError()
+
 
 class LabeledPodsFinder(OverProvisioningPodsFinder):
     def __init__(self, kuber: client.CoreV1Api, namespace: str, label_selector: str):
-        self.kuber = kuber
-        self.label_selector = label_selector
-        self.namespace = namespace
+        self._kuber = kuber
+        self._label_selector = label_selector
+        self._namespace = namespace
 
     def find_pods(self) -> t.List[Pod]:
-        pods_list: client.models.v1_pod_list.V1PodList = self.kuber.list_namespaced_pod(
-            self.namespace, label_selector=self.label_selector
+        pods_list: client.models.v1_pod_list.V1PodList = self._kuber.list_namespaced_pod(
+            self._namespace, label_selector=self._label_selector
         )
         return [Pod(pod.metadata.name, pod.spec.node_name) for pod in pods_list.items]
+
+    def wait_until_node_assigned(self, pod_name: str):
+        while True:
+            pod = self._kuber.read_namespaced_pod(pod_name, self._namespace)
+            if not self.is_node_assigned(pod):
+                time.sleep(0.1)
+            else:
+                return
+
+    @staticmethod
+    def is_node_assigned(pod) -> bool:
+        return pod.spec.node_name is not None
