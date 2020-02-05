@@ -17,6 +17,7 @@ def main(
         kubernetes_namespace: str,
         max_pod_creation_time: float,
         over_provisioning_pods_label_selector: str,
+        over_provisioning_pods_namespace: str,
         nodes_label_selector: str,
         create_new_namespace: bool,
         pods_to_create_quantity: int,
@@ -26,13 +27,14 @@ def main(
         max_pod_creation_time,
         nodes_label_selector,
         over_provisioning_pods_label_selector,
+        over_provisioning_pods_namespace
     )
     kuber = create_kuber(kubernetes_conf_path)
 
     kubernetes_namespace_instance = KuberNamespace(kuber, kubernetes_namespace)
     over_provisioning_pods_finder = LabeledPodsFinder(
         kuber,
-        namespace=settings.kubernetes_namespace,
+        namespace=settings.over_provisioning_pods_namespace,
         label_selector=settings.over_provisioning_pods_label_selector,
     )
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)

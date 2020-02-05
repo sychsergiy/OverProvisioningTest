@@ -17,7 +17,8 @@ from over_provisioning.main import main
 @click.option(
     "--create-new-namespace/--no-create-new-namespace",
     default=True,
-    help="Create new kubernetes namespace or use existent. By default True",
+    help="Create new kubernetes namespace or use existent. "
+         "By default create's new. In this namespace pods will be spawned",
 )
 @click.option(
     "-t",
@@ -25,6 +26,13 @@ from over_provisioning.main import main
     envvar="MAX_POD_CREATION_TIME_IN_SECONDS",
     type=click.FLOAT,
     help="Max time for pod creation in seconds. If pod creation hit this limit test will fail",
+)
+@click.option(
+    "-l",
+    "--over-provisioning-pods-namespace",
+    envvar="OVER_PROVISIONING_PODS_NAMESPACE",
+    type=click.STRING,
+    help="Namespace where over provisioning located",
 )
 @click.option(
     "-l",
@@ -52,6 +60,7 @@ def run(
     kubernetes_namespace: str,
     max_pod_creation_time: float,
     over_provisioning_pods_label_selector: str,
+    over_provisioning_pods_namespace: str,
     nodes_label_selector: str,
     create_new_namespace: bool,
     pods_to_create_quantity: int,
@@ -61,6 +70,7 @@ def run(
         kubernetes_namespace,
         max_pod_creation_time,
         over_provisioning_pods_label_selector,
+        over_provisioning_pods_namespace,
         nodes_label_selector,
         create_new_namespace,
         pods_to_create_quantity

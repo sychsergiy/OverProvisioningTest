@@ -26,13 +26,22 @@ class Settings:
         max_pod_creation_time_in_seconds: float,
         nodes_label_selector: str,
         over_provisioning_pods_label_selector: str,
+        over_provisioning_pods_namespace: str,
     ):
         self.kubernetes_namespace = kubernetes_namespace
         self.max_pod_creation_time_in_seconds = max_pod_creation_time_in_seconds
         self.nodes_label_selector = nodes_label_selector
-        self.over_provisioning_pods_label_selector = (
-            over_provisioning_pods_label_selector
-        )
+        self.over_provisioning_pods_label_selector = over_provisioning_pods_label_selector
+        self.over_provisioning_pods_namespace = over_provisioning_pods_namespace
+
+    @property
+    def over_provisioning_pods_namespace(self):
+        return self._over_provisioning_pods_namespace
+
+    @over_provisioning_pods_namespace.setter
+    def over_provisioning_pods_namespace(self, value):
+        self._validate_not_none(value, "over_provisioning_pods_label_selector")
+        self._over_provisioning_pods_namespace = value
 
     @property
     def over_provisioning_pods_label_selector(self):
