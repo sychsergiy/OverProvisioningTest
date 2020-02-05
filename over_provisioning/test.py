@@ -5,6 +5,8 @@ import sys
 
 from kubernetes import client, config
 
+from over_provisioning.environment_setuper import EnvironmentSetuper, CreateNamespaceHook, DeleteNamespaceHook, \
+    CheckNamespaceExistsHook
 from over_provisioning.kuber_namespace import KuberNamespace
 from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodCreator
@@ -38,6 +40,11 @@ class PodCreatingLoop:
 
         self._pods_to_create_quantity = pods_to_create_quantity
 
+        self._created_pods_names = []
+
+    def get_created_pods(self):
+        return self._created_pods_names
+
     @staticmethod
     def _construct_pod_name(pod_sequence_number: int):
         return f"test-pod-{pod_sequence_number}"
@@ -57,6 +64,8 @@ class PodCreatingLoop:
         logger.info(f"Wait until pod is ready")
         _, waited_time = self._pod_creator.wait_until_pod_ready(pod_name)
         logger.info(f"Waited time: {waited_time}\n")
+
+        self._created_pods_names.append(pod_name)
 
         if self._does_over_provisioning_pod_changed_name_and_node(over_provisioning_pod):
             return self.IterationResult.OVER_PROVISIONING_POD_CHANGED_NODE
@@ -125,12 +134,16 @@ class OneOverProvisioningPodTest:
     Current version of test will work's only when one over provisioning pod is present in namespace.
     """
 
-    def __init__(self, pod_creating_loop: PodCreatingLoop, nodes_finder: NodesFinder):
-
+    def __init__(
+            self, pod_creating_loop: PodCreatingLoop, nodes_finder: NodesFinder, environment_setuper: EnvironmentSetuper
+    ):
         self._pod_creating_loop = pod_creating_loop
         self._nodes_finder = nodes_finder
+        self._environment_setuper = environment_setuper
 
     def run(self, max_pod_creation_time_in_seconds) -> bool:
+        self._environment_setuper.create()
+
         initial_amount_of_nodes = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
 
@@ -138,25 +151,17 @@ class OneOverProvisioningPodTest:
 
         amount_of_nodes_after_test = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
+
+        self._environment_setuper.destroy()
+
         return test_result
 
 
 def run_test(
-        kuber_namespace: KuberNamespace,
-        create_new_namespace: bool,
         over_provisioning_test: OneOverProvisioningPodTest,
         max_pod_creation_time_in_seconds: float,
 ):
-    if create_new_namespace:
-        kuber_namespace.create()
-        time.sleep(2)
-    else:
-        kuber_namespace.check_if_exists()
-
     result = over_provisioning_test.run(max_pod_creation_time_in_seconds)
-
-    if create_new_namespace:
-        kuber_namespace.delete()
 
     if result:
         logger.info("Test pass ......................")
