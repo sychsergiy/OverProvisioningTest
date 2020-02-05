@@ -1,16 +1,15 @@
 import click
 
-from over_provisioning import (
+from over_provisioning.kuber_namespace import KuberNamespace
+from over_provisioning.test_runner import (
     main,
-    KuberNamespace,
     create_kuber,
-    PodsCreator,
-    LabeledPodsFinder,
-    NodesLister,
-    OverProvisioningTest,
+    OverProvisioningTestRunner,
 )
-
-from settings import Settings
+from over_provisioning.pod_creator import PodCreator
+from over_provisioning.pods_finder import LabeledPodsFinder
+from over_provisioning.nodes_finder import NodesFinder
+from over_provisioning.settings import Settings
 
 
 @click.command()
@@ -80,13 +79,13 @@ def run(
         namespace=settings.kubernetes_namespace,
         label_selector=settings.over_provisioning_pods_label_selector,
     )
-    pods_creator = PodsCreator(kuber, settings.kubernetes_namespace)
-    nodes_lister = NodesLister(kuber, settings.nodes_label_selector)
+    pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
+    nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
-    test_runner = OverProvisioningTest(
-        pods_creator,
+    test_runner = OverProvisioningTestRunner(
+        pod_creator,
         over_provisioning_pods_finder,
-        nodes_lister,
+        nodes_finder,
         pods_to_create_quantity,
     )
 
