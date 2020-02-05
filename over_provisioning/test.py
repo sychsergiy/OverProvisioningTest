@@ -1,4 +1,5 @@
 import time
+import enum
 import logging
 
 from kubernetes import client, config
@@ -19,6 +20,10 @@ def create_kuber(config_file_path=None):
 
 
 class OverProvisioningTest:
+    class IterationResult(enum.Enum):
+        POD_CREATION_TIME_HIT_THE_LIMIT = 1
+        OVER_PROVISIONING_POD_CHANGED_NODE = 3
+
     """
     Current version of test will work's only when one over provisioning pod is present in namespace.
     """
@@ -36,22 +41,6 @@ class OverProvisioningTest:
 
         # will be not used if None
         self._pods_to_create_quantity = pods_to_create_quantity
-
-    def _create_pod_and_wait_until_ready(
-            self, pod_name: str, max_pod_creation_time_in_seconds: float
-    ) -> bool:
-        logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, execution_time = self._pod_creator.create_pod(pod_name)
-        logger.info(f"Pod creation time: {execution_time}")
-
-        if execution_time > max_pod_creation_time_in_seconds:
-            logger.info("Pod creation time hit the limit. Test Failed")
-            return False
-
-        logger.info(f"Wait until pod is ready")
-        _, waited_time = self._pod_creator.wait_until_pod_ready(pod_name)
-        logger.info(f"Waited time: {waited_time}\n")
-        return True
 
     def _find_over_provisioning_pod(self) -> Pod:
         pods_map = self._over_provisioning_pods_finder.find_pods()
@@ -75,35 +64,57 @@ class OverProvisioningTest:
         over_provisioning_pod = self._find_over_provisioning_pod()
         return pod.name != over_provisioning_pod.name and pod.node_name != over_provisioning_pod.node_name
 
+    def _next_creating_pod_iteration(
+            self, pod_name: str, max_pod_creation_time_in_seconds: float
+    ):
+        over_provisioning_pod = self._find_over_provisioning_pod()
+
+        logger.info(f"Init pod creation. Pod name: {pod_name}")
+        _, execution_time = self._pod_creator.create_pod(pod_name)
+        logger.info(f"Pod creation time: {execution_time}")
+
+        if execution_time > max_pod_creation_time_in_seconds:
+            return self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT
+
+        logger.info(f"Wait until pod is ready")
+        _, waited_time = self._pod_creator.wait_until_pod_ready(pod_name)
+        logger.info(f"Waited time: {waited_time}\n")
+
+        if self._does_over_provisioning_pod_changed_name_and_node(over_provisioning_pod):
+            return self.IterationResult.OVER_PROVISIONING_POD_CHANGED_NODE
+
+    @staticmethod
+    def _construct_pod_name(pod_sequence_number: int):
+        return f"test-pod-{pod_sequence_number}"
+
+    def _run_creating_pod_loop(self, max_pod_creation_time_in_seconds: float):
+        i = 1
+        while True:
+            pod_name_to_create = self._construct_pod_name(i)
+
+            iteration_result = self._next_creating_pod_iteration(pod_name_to_create, max_pod_creation_time_in_seconds)
+            if iteration_result == self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT:
+                logger.info(f"Pod creation time hit the limit: {max_pod_creation_time_in_seconds}.")
+                return False
+
+            if iteration_result == self.IterationResult.OVER_PROVISIONING_POD_CHANGED_NODE:
+                logger.info(f"Over provisioning pod successfully changed node.")
+                return True
+
+            if self._pods_to_create_quantity:
+                if i >= self._pods_to_create_quantity:
+                    logger.info(
+                        "Finish the test because of hit the limit of pods quantity"
+                    )
+                    return False
+
+            i += 1
+
     def run(self, max_pod_creation_time_in_seconds) -> bool:
         initial_amount_of_nodes = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
 
-        i = 1
-        while True:
-            pod_name = f"test-pod-{i}"
-
-            over_provisioning_pod = self._find_over_provisioning_pod()
-
-            if not self._create_pod_and_wait_until_ready(
-                    pod_name, max_pod_creation_time_in_seconds
-            ):
-                test_result = False
-                break
-
-            if self._does_over_provisioning_pod_changed_name_and_node(over_provisioning_pod):
-                test_result = True
-                break
-
-            if self._pods_to_create_quantity:
-                if i > self._pods_to_create_quantity:
-                    logger.info(
-                        "Finish the test because of hit the limit of pods quantity"
-                    )
-                    test_result = False
-                    break
-
-            i += 1
+        test_result = self._run_creating_pod_loop(max_pod_creation_time_in_seconds)
 
         amount_of_nodes_after_test = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
