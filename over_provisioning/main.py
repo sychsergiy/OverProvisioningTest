@@ -3,7 +3,6 @@ from over_provisioning.environment_setuper import (
     CreateNamespaceHook,
     DeleteNamespaceHook,
     CheckNamespaceExistsHook,
-    CleanupSpecificPodsHookFactory,
 )
 from over_provisioning.kuber_namespace import KuberNamespace
 from over_provisioning.nodes_finder import NodesFinder
@@ -53,13 +52,9 @@ def main(
         env_setuper.add_create_hook(CheckNamespaceExistsHook(kubernetes_namespace_instance))
 
     pod_deleter = PodDeleter(kuber, settings.kubernetes_namespace)
-    cleanup_specific_pods_hook_factory = CleanupSpecificPodsHookFactory(pod_deleter)
 
     test_runner = OneOverProvisioningPodTest(
-        pod_creating_loop,
-        nodes_finder,
-        env_setuper,
-        cleanup_specific_pods_hook_factory,
+        pod_creating_loop, nodes_finder, env_setuper, pod_deleter,
     )
 
     run_test(test_runner, max_pod_creation_time)

@@ -4,9 +4,9 @@ import sys
 
 from kubernetes import client, config
 
-from over_provisioning.environment_setuper import EnvironmentSetuper, CleanupSpecificPodsHookFactory
+from over_provisioning.environment_setuper import EnvironmentSetuper
 from over_provisioning.nodes_finder import NodesFinder
-from over_provisioning.pod_creator import PodCreator
+from over_provisioning.pod_creator import PodCreator, PodDeleter
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
 
 logger = logging.getLogger(__name__)
@@ -138,17 +138,12 @@ class OneOverProvisioningPodTest:
     def __init__(
             self, pod_creating_loop: PodCreatingLoop, nodes_finder: NodesFinder,
             environment_setuper: EnvironmentSetuper,
-            cleanup_specific_pods_factory: CleanupSpecificPodsHookFactory,
+            pod_deleter: PodDeleter,
     ):
         self._pod_creating_loop = pod_creating_loop
         self._nodes_finder = nodes_finder
         self._environment_setuper = environment_setuper
-        self._cleanup_specific_pods_factory = cleanup_specific_pods_factory
-
-    def cleanup_environment(self):
-        pods_to_delete = self._pod_creating_loop.get_created_pods()
-        hook = self._cleanup_specific_pods_factory.create(pods_to_delete)
-        self._environment_setuper.add_destroy_hook(hook)
+        self._pod_deleter = pod_deleter
 
     def _pre_run(self):
         self._environment_setuper.create()
@@ -156,21 +151,25 @@ class OneOverProvisioningPodTest:
         initial_amount_of_nodes = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Initial amount of nodes: {initial_amount_of_nodes}")
 
-    def _after_run(self):
+    def _post_run(self):
         amount_of_nodes_after_test = len(self._nodes_finder.find_by_label_selector())
         logger.info(f"Amount of nodes after the test: {amount_of_nodes_after_test}")
 
-        self._cleanup_env()
+        self._cleanup_environment()
 
-    def _cleanup_env(self):
+    def _delete_created_pods(self):
         pods_to_delete = self._pod_creating_loop.get_created_pods()
-        hook = self._cleanup_specific_pods_factory.create(pods_to_delete)
-        self._environment_setuper.add_destroy_hook(hook)
+        try:
+            self._pod_deleter.delete_many(pods_to_delete)
+        except Exception:
+            logger.critical("Failed to cleanup created pods. Manual cleanup required")
 
+    def _cleanup_environment(self):
+        self._delete_created_pods()
         try:
             self._environment_setuper.destroy()
         except Exception:
-            logger.critical("Failed to cleanup environment. Manual cleanup required")
+            logger.critical("Failed to destroy environment. Manual cleanup required")
 
     def run(self, max_pod_creation_time_in_seconds: float) -> bool:
         self._pre_run()
@@ -178,10 +177,10 @@ class OneOverProvisioningPodTest:
         try:
             test_result = self._pod_creating_loop.run(max_pod_creation_time_in_seconds)
         except Exception as e:
-            self._cleanup_env()
+            self._cleanup_environment()
             raise e
 
-        self._after_run()
+        self._post_run()
 
         return test_result
 
