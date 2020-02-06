@@ -9,7 +9,8 @@ from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodCreator, PodDeleter
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
-from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test, PodCreatingLoop
+from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
+from over_provisioning.tests.pod_creating_loop import PodCreatingLoop
 
 
 def main(
