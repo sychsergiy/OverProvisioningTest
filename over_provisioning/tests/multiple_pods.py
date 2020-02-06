@@ -45,15 +45,15 @@ class PodCreatingLoop:
         pods_nodes_before = self._find_over_provisioning_pods()
 
         logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, execution_time = self._pod_creator.create_pod(pod_name)
-        logger.info(f"Pod creation time: {execution_time}")
-
-        if execution_time > max_pod_creation_time_in_seconds:
-            return self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT
+        _, pod_creation_time = self._pod_creator.create_pod(pod_name)
+        logger.info(f"Pod creation time: {pod_creation_time}")
 
         logger.info(f"Wait until pod is ready")
-        _, waited_time = self._pod_creator.wait_until_pod_ready(pod_name)
-        logger.info(f"Waited time: {waited_time}\n")
+        _, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name)
+        logger.info(f"Waited time: {pod_getting_ready_time}\n")
+
+        if pod_creation_time + pod_getting_ready_time > max_pod_creation_time_in_seconds:
+            return self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT
 
         self._created_pods_names.append(pod_name)
 
