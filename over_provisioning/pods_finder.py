@@ -1,7 +1,11 @@
 import time
 import typing as t
+import logging
 
 from kubernetes import client
+
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 
 class Pod(t.NamedTuple):
@@ -33,11 +37,14 @@ class LabeledPodsFinder(OverProvisioningPodsFinder):
         return [Pod(pod.metadata.name, pod.spec.node_name) for pod in pods_list.items]
 
     def wait_until_node_assigned(self, pod_name: str):
+        waited_time_sum = 0
         while True:
             pod = self._kuber.read_namespaced_pod(pod_name, self._namespace)
             if not self.is_node_assigned(pod):
-                time.sleep(0.1)
+                time.sleep(1)
+                waited_time_sum += 1
             else:
+                logger.info(f"Totally waited on node assigning: {waited_time_sum}")
                 return
 
     @staticmethod
