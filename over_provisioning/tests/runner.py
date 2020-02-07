@@ -3,7 +3,7 @@ import logging
 from over_provisioning.environment_setuper import EnvironmentSetuper
 from over_provisioning.nodes_finder import NodesFinder
 from over_provisioning.pod_creator import PodDeleter
-from over_provisioning.tests.pod_creating_loop import PodCreatingLoop
+from over_provisioning.tests.one_pod import PodCreatingLoop
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

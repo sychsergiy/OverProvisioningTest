@@ -12,24 +12,26 @@ logging.basicConfig(level=logging.INFO)
 
 class OverProvisioningPodsStatusChecker:
 
-    def _get_created_pods(self, pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]):
+    @staticmethod
+    def _get_created_pods(pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]):
         created_pod_names = list(set(pods_nodes_after.keys()) - set(pods_nodes_before.keys()))
         return created_pod_names
-
-    def _get_removed_pods(self, pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]):
+    @staticmethod
+    def _get_removed_pods(pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]):
         removed_pod_names = list(set(pods_nodes_before.keys()) - set(pods_nodes_after.keys()))
         return removed_pod_names
 
+    @classmethod
     def does_one_over_provisioning_pod_was_recreated_on_new_node(
-            self, pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]
+            cls, pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]
     ) -> bool:
         # check one pod created
-        created_pod_names = self._get_created_pods(pods_nodes_before, pods_nodes_after)
+        created_pod_names = cls._get_created_pods(pods_nodes_before, pods_nodes_after)
         if len(created_pod_names) != 1:
             return False
 
         # check one pod removed
-        removed_pod_names = self._get_removed_pods(pods_nodes_before, pods_nodes_after)
+        removed_pod_names = cls._get_removed_pods(pods_nodes_before, pods_nodes_after)
         if len(removed_pod_names) != 1:
             return False
 
@@ -49,8 +51,9 @@ class OverProvisioningPodsStatusChecker:
         )
         return True
 
+    @staticmethod
     def does_all_old_over_provisioning_pods_removed(
-         self, initial_pods_nodes: t.Dict[str, str], current_pods_nodes: t.Dict[str, str]
+         initial_pods_nodes: t.Dict[str, str], current_pods_nodes: t.Dict[str, str]
     ) -> bool:
         not_recreated_pods_names = set(initial_pods_nodes.keys()).intersection(set(current_pods_nodes.keys()))
         all_old_pods_removed = len(not_recreated_pods_names) == 0
@@ -68,14 +71,12 @@ class PodCreatingLoop:
             self,
             pods_creator: PodsCreator,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
-            over_provisioning_pods_status_checker: OverProvisioningPodsStatusChecker,
             nodes_finder: NodesFinder,
             pods_to_create_quantity: int = None,
     ):
         self._pods_creator = pods_creator
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_finder = nodes_finder
-        self._over_provisioning_pods_status_checker = over_provisioning_pods_status_checker
 
         self._pods_to_create_quantity = pods_to_create_quantity
 
@@ -105,7 +106,7 @@ class PodCreatingLoop:
                     pods_nodes_after = self._find_over_provisioning_pods()
 
             # check only one over provisioning was recreated
-            if self._over_provisioning_pods_status_checker.does_one_over_provisioning_pod_was_recreated_on_new_node(
+            if OverProvisioningPodsStatusChecker.does_one_over_provisioning_pod_was_recreated_on_new_node(
                     pods_nodes_before, pods_nodes_after
             ):
                 # if yes: continue
@@ -140,7 +141,7 @@ class PodCreatingLoop:
                 # check all over provisioning pod was recreated on new nodes
                 # if yes finish test (result test is passed)
                 pods_nodes = self._find_over_provisioning_pods()
-                if self._over_provisioning_pods_status_checker.does_all_old_over_provisioning_pods_removed(
+                if OverProvisioningPodsStatusChecker.does_all_old_over_provisioning_pods_removed(
                         initial_over_prov_pods_nodes_map, pods_nodes
                 ):
                     return True
