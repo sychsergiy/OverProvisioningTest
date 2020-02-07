@@ -10,7 +10,9 @@ from over_provisioning.pod_creator import PodCreator, PodDeleter
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
-from over_provisioning.tests.pod_creating_loop import PodCreatingLoop
+# from over_provisioning.tests.pod_creating_loop import PodCreatingLoop
+from over_provisioning.tests.multiple_pods import PodCreatingLoop
+from over_provisioning.tests.pods_creator import PodsCreator
 
 
 def main(
@@ -41,8 +43,10 @@ def main(
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
+    pods_creator = PodsCreator(pod_creator, "test-pod")
+
     pod_creating_loop = PodCreatingLoop(
-        pod_creator, over_provisioning_pods_finder, nodes_finder, pods_to_create_quantity
+        pods_creator, over_provisioning_pods_finder, nodes_finder, pods_to_create_quantity
     )
 
     env_setuper = EnvironmentSetuper()

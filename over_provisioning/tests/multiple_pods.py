@@ -3,8 +3,8 @@ import enum
 import logging
 
 from over_provisioning.nodes_finder import NodesFinder
-from over_provisioning.pod_creator import PodCreator
-from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
+from over_provisioning.pods_finder import OverProvisioningPodsFinder
+from over_provisioning.tests.pods_creator import PodsCreator
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -19,43 +19,29 @@ class PodCreatingLoop:
 
     def __init__(
             self,
-            pod_creator: PodCreator,
+            pods_creator: PodsCreator,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
             nodes_finder: NodesFinder,
             pods_to_create_quantity: int = None,
     ):
-        self._pod_creator = pod_creator
+        self._pods_creator = pods_creator
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_finder = nodes_finder
 
         self._pods_to_create_quantity = pods_to_create_quantity
 
-        self._created_pods_names = []
-
     def get_created_pods(self):
-        return self._created_pods_names
-
-    @staticmethod
-    def _construct_pod_name(pod_sequence_number: int):
-        return f"test-pod-{pod_sequence_number}"
+        return self._pods_creator.get_created_pods()
 
     def _next_creating_pod_iteration(
-            self, pod_name: str, max_pod_creation_time_in_seconds: float
+            self, pod_sequence_number: int, max_pod_creation_time_in_seconds: float
     ):
         pods_nodes_before = self._find_over_provisioning_pods()
 
-        logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, pod_creation_time = self._pod_creator.create_pod(pod_name)
-        logger.info(f"Pod creation time: {pod_creation_time}")
+        pod_creation_time = self._pods_creator.create_pod(pod_sequence_number)
 
-        logger.info(f"Wait until pod is ready")
-        _, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name)
-        logger.info(f"Waited time: {pod_getting_ready_time}\n")
-
-        if pod_creation_time + pod_getting_ready_time > max_pod_creation_time_in_seconds:
+        if pod_creation_time > max_pod_creation_time_in_seconds:
             return self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT
-
-        self._created_pods_names.append(pod_name)
 
         pods_nodes_after = self._find_over_provisioning_pods()
 
@@ -69,7 +55,7 @@ class PodCreatingLoop:
                     pods_nodes_after = self._find_over_provisioning_pods()
 
             # check only one over provisioning was recreated
-            if self._does_one_over_provisioning_was_recreated_on_new_node(pods_nodes_before, pods_nodes_after):
+            if self._does_one_over_provisioning_pod_was_recreated_on_new_node(pods_nodes_before, pods_nodes_after):
                 # if yes: continue
                 return self.IterationResult.OVER_PROVISIONING_POD_CHANGED_NODE
             else:
@@ -83,7 +69,7 @@ class PodCreatingLoop:
                 )
 
     @staticmethod
-    def _does_one_over_provisioning_was_recreated_on_new_node(
+    def _does_one_over_provisioning_pod_was_recreated_on_new_node(
         pods_nodes_before: t.Dict[str, str], pods_nodes_after: t.Dict[str, str]
     ) -> bool:
         # check one pod created
@@ -111,7 +97,7 @@ class PodCreatingLoop:
 
     @staticmethod
     def _does_all_old_over_provisioning_pods_removed(
-        initial_pods_nodes: t.Dict[str, str], current_pods_nodes: t.Dict[str, str]
+            initial_pods_nodes: t.Dict[str, str], current_pods_nodes: t.Dict[str, str]
     ) -> bool:
         not_recreated_pods_names = set(initial_pods_nodes.keys()).intersection(set(current_pods_nodes.keys()))
         all_old_pods_removed = len(not_recreated_pods_names) == 0
@@ -123,11 +109,7 @@ class PodCreatingLoop:
         initial_over_prov_pods_nodes_map = self._find_over_provisioning_pods()
 
         while True:
-            pod_name_to_create = self._construct_pod_name(i)
-
-            iteration_result = self._next_creating_pod_iteration(
-                pod_name_to_create, max_pod_creation_time_in_seconds
-            )
+            iteration_result = self._next_creating_pod_iteration(i, max_pod_creation_time_in_seconds)
             if iteration_result == self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT:
                 logger.info(f"Pod creation time hit the limit: {max_pod_creation_time_in_seconds}.")
                 return False
