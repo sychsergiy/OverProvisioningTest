@@ -59,7 +59,7 @@ class OverProvisioningPodsStateChecker:
 
         recreated_pods = set(current_pods_names) - set(initial_pods_names)
 
-        newly_created_pods = self._created_pods - recreated_pods
+        newly_created_pods = recreated_pods - self._created_pods
         if newly_created_pods:
             self._created_pods = self._created_pods.union(newly_created_pods)
         return newly_created_pods
