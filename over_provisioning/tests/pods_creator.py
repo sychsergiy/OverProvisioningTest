@@ -19,7 +19,7 @@ class PodsCreator:
     def get_created_pods(self):
         return self._created_pods_names
 
-    def create_pod(self, pod_sequence_number: int) -> float:
+    def create_pod(self, pod_sequence_number: int, max_pod_creation_time: float) -> float:
         """
         returns time waited until pod ready and created pod_name
         """
@@ -30,7 +30,9 @@ class PodsCreator:
         logger.info(f"Pod creation time: {pod_creation_time}")
 
         logger.info(f"Wait until pod is ready")
-        _, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name)
+        ok, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name, max_pod_creation_time)
+        if not ok:
+            raise RuntimeError("Pod creating time hit the limit")
         logger.info(f"Waited time: {pod_getting_ready_time}\n")
 
         self._created_pods_names.append(pod_name)

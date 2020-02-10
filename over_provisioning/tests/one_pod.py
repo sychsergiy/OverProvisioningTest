@@ -37,7 +37,7 @@ class PodCreatingLoop:
     ):
         over_provisioning_pod = self._find_over_provisioning_pod()
 
-        waited_time = self._pods_creator.create_pod(pod_sequence_number)
+        waited_time = self._pods_creator.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
 
         if waited_time > max_pod_creation_time_in_seconds:
             return self.IterationResult.POD_CREATION_TIME_HIT_THE_LIMIT
@@ -54,7 +54,12 @@ class PodCreatingLoop:
           then assign's newly created node to newly created pod
         """
         over_provisioning_pod = self._find_over_provisioning_pod()
-        return pod.name != over_provisioning_pod.name and pod.node_name != over_provisioning_pod.node_name
+        result = pod.name != over_provisioning_pod.name and pod.node_name != over_provisioning_pod.node_name
+
+        if result:
+            logger.info(f"Old pod name: {pod.name}, old node: {pod.node_name}")
+            logger.info(f"Created pod name: {over_provisioning_pod.name}, assigned node: {over_provisioning_pod.node_name}")
+        return result
 
     def run(self, max_pod_creation_time_in_seconds):
         i = 1
@@ -68,6 +73,10 @@ class PodCreatingLoop:
 
             if iteration_result == self.IterationResult.OVER_PROVISIONING_POD_CHANGED_NODE:
                 logger.info(f"Over provisioning pod successfully changed node.")
+
+                logger.info(f"Create extra pod")
+                waited_time = self._pods_creator.create_pod(100, max_pod_creation_time_in_seconds)
+                logger.info(f"Extra pod creation time: {waited_time}")
                 return True
 
             if self._pods_to_create_quantity:

@@ -9,7 +9,7 @@ local_run:
       --over-provisioning-pods-namespace="over-prov-pods" \
       --nodes-label-selector="over_prov_pod"  \
       --create-new-namespace \
-      --pods-to-create-quantity=5
+      --pods-to-create-quantity=3
 
 run:
 	python cli.py kube_remote_config.yaml \
