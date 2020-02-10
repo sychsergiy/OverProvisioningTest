@@ -36,16 +36,16 @@ class PodCreator:
         return self._kuber.create_namespaced_pod(self._namespace, pod, pretty=True)
 
     @pinpoint_execution_time
-    def wait_until_pod_ready(self, pod_name: str, max_waited_time: float) -> bool:
+    def wait_until_pod_ready(self, pod_name: str, max_waiting_time: float, read_pod_interval: float = 0.5) -> bool:
         total_waited_time = 0
         while True:
             pod = self._kuber.read_namespaced_pod(pod_name, self._namespace)
             if self.is_pod_ready(pod):
                 return True
             else:
-                time.sleep(0.5)
-                total_waited_time += 0.5
-                if total_waited_time > max_waited_time:
+                time.sleep(read_pod_interval)
+                total_waited_time += read_pod_interval
+                if total_waited_time > max_waiting_time:
                     return False
 
     @staticmethod

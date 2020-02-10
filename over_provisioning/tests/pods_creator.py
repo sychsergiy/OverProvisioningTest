@@ -6,6 +6,15 @@ logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
 
+class PodCreationTimeHitsLimitError(Exception):
+    def __init__(self, pod_name: str, creation_time_limit: float):
+        self.pod_name = pod_name
+        self.creation_time_limit = creation_time_limit
+
+    def __str__(self):
+        return f"Pod creating: {self.pod_name} time hit the limit: {self.creation_time_limit}."
+
+
 class PodsCreator:
     def __init__(self, pod_creator: PodCreator, pods_base_name: str):
         self._pod_creator = pod_creator
@@ -32,7 +41,7 @@ class PodsCreator:
         logger.info(f"Wait until pod is ready")
         ok, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name, max_pod_creation_time)
         if not ok:
-            raise RuntimeError("Pod creating time hit the limit")
+            raise PodCreationTimeHitsLimitError(pod_name, max_pod_creation_time)
         logger.info(f"Waited time: {pod_getting_ready_time}\n")
 
         self._created_pods_names.append(pod_name)
