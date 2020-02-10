@@ -13,25 +13,25 @@ class PodCreatingLoop:
 
     def __init__(
             self,
-            pods_creator: PodsSpawner,
+            pods_spawner: PodsSpawner,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
             nodes_finder: NodesFinder,
             pods_to_create_quantity: int = None,
     ):
-        self._pods_creator = pods_creator
+        self._pods_spawner = pods_spawner
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._nodes_finder = nodes_finder
 
         self._pods_to_create_quantity = pods_to_create_quantity
 
     def get_created_pods(self):
-        return self._pods_creator.get_created_pods()
+        return self._pods_spawner.get_created_pods()
 
     def _create_next_pod(
             self, pod_sequence_number: int, max_pod_creation_time_in_seconds: float
     ) -> float:
         try:
-            self._pods_creator.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
+            self._pods_spawner.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
         except PodCreationTimeHitsLimitError:
             logger.exception("Pod creation failed")
             return False
@@ -43,10 +43,8 @@ class PodCreatingLoop:
         initial_over_prov_pods = self._over_provisioning_pods_finder.find_pods()
 
         while True:
-            try:
-                self._create_next_pod(i, max_pod_creation_time_in_seconds)
-            except PodCreationTimeHitsLimitError:
-                logger.exception("Pod creation failed")
+            ok = self._create_next_pod(i, max_pod_creation_time_in_seconds)
+            if not ok:
                 return False
 
             if self._is_created_pods_quantity_hits_limit(i):
