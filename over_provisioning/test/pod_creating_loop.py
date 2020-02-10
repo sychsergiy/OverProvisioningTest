@@ -23,10 +23,10 @@ class PodCreatingLoop:
         return self._pods_spawner.get_created_pods()
 
     def _create_next_pod(
-            self, pod_sequence_number: int, max_pod_creation_time_in_seconds: float
+            self, pod_name_suffix: str, max_pod_creation_time_in_seconds: float
     ) -> float:
         try:
-            self._pods_spawner.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
+            self._pods_spawner.create_pod(pod_name_suffix, max_pod_creation_time_in_seconds)
         except PodCreationTimeHitsLimitError:
             logger.exception("Pod creation failed")
             return False
@@ -37,7 +37,7 @@ class PodCreatingLoop:
 
         i = 1
         while True:
-            ok = self._create_next_pod(i, max_pod_creation_time_in_seconds)
+            ok = self._create_next_pod(str(i), max_pod_creation_time_in_seconds)
             if not ok:
                 return False
 

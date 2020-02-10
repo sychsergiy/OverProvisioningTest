@@ -28,17 +28,17 @@ class PodsSpawner:
 
         self._created_pods_names = []
 
-    def _construct_pod_name(self, pod_sequence_number: int):
-        return f"{self._pods_base_name}-{pod_sequence_number}"
+    def _construct_pod_name(self, pod_name_suffix: str):
+        return f"{self._pods_base_name}-{pod_name_suffix}"
 
     def get_created_pods(self):
         return self._created_pods_names
 
-    def create_pod(self, pod_sequence_number: int, max_pod_creation_time: float):
+    def create_pod(self, pod_name_suffix: str, max_pod_creation_time: float):
         """
         returns time waited until pod ready and created pod_name
         """
-        pod_name = self._construct_pod_name(pod_sequence_number)
+        pod_name = self._construct_pod_name(pod_name_suffix)
 
         logger.info(f"Init pod creation. Pod name: {pod_name}")
         pod_creation_time = self._pod_creator.create_pod(pod_name, self._pod_spec)
