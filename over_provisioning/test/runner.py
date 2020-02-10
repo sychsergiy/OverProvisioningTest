@@ -3,6 +3,7 @@ from over_provisioning.kuber.pod_deleter import PodDeleter
 from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.logger import get_logger
 from over_provisioning.test.pod_creating_loop import PodCreatingLoop
+from over_provisioning.test.pods_cleaner import PodsCleaner
 
 logger = get_logger()
 
@@ -16,12 +17,12 @@ class OneOverProvisioningPodTest:
             self, pod_creating_loop: PodCreatingLoop,
             nodes_finder: NodesFinder,
             environment_setuper: EnvironmentSetuper,
-            pod_deleter: PodDeleter,
+            pod_cleaner: PodsCleaner
     ):
         self._pod_creating_loop = pod_creating_loop
         self._nodes_finder = nodes_finder
         self._environment_setuper = environment_setuper
-        self._pod_deleter = pod_deleter
+        self._pods_cleaner = pod_cleaner
 
     def _pre_run(self):
         self._environment_setuper.create()
@@ -35,15 +36,7 @@ class OneOverProvisioningPodTest:
 
         self._cleanup_environment()
 
-    def _delete_created_pods(self):
-        pods_to_delete = self._pod_creating_loop.get_created_pods()
-        try:
-            self._pod_deleter.delete_many(pods_to_delete)
-        except Exception:
-            logger.critical("Failed to cleanup created pods. Manual cleanup required")
-
     def _cleanup_environment(self):
-        self._delete_created_pods()
         try:
             self._environment_setuper.destroy()
         except Exception:
@@ -52,11 +45,9 @@ class OneOverProvisioningPodTest:
     def run(self, max_pod_creation_time_in_seconds: float) -> bool:
         self._pre_run()
 
-        try:
+        with self._pods_cleaner as pods_cleaner:
             test_result = self._pod_creating_loop.run(max_pod_creation_time_in_seconds)
-        except Exception as e:
-            self._cleanup_environment()
-            raise e
+            pods_cleaner.set_pods_to_delete(self._pod_creating_loop.get_created_pods())
 
         self._post_run()
 

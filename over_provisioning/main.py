@@ -21,6 +21,7 @@ from over_provisioning.settings import Settings
 from over_provisioning.test.pod_creating_loop import PodCreatingLoop
 from over_provisioning.test.node_assigning_waiter import NodesAssigningWaiter
 from over_provisioning.test.pod_waiter import PodWaiter
+from over_provisioning.test.pods_cleaner import PodsCleaner
 from over_provisioning.test.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
 from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
@@ -102,8 +103,9 @@ def main(
 
     pod_deleter = PodDeleter(kuber, settings.kubernetes_namespace)
 
+    pods_cleaner = PodsCleaner(pod_deleter)
     test_runner = OneOverProvisioningPodTest(
-        pod_creating_loop, nodes_finder, env_setuper, pod_deleter,
+        pod_creating_loop, nodes_finder, env_setuper, pods_cleaner,
     )
 
     run_test(test_runner, settings.max_pod_creation_time_in_seconds)
