@@ -1,3 +1,5 @@
+import sys
+
 from over_provisioning.environment.setuper import (
     EnvironmentSetuper,
 
@@ -7,21 +9,38 @@ from over_provisioning.environment.hooks import (
     DeleteNamespaceHook,
     CheckNamespaceExistsHook,
 )
-
+from over_provisioning.kuber import factory
 from over_provisioning.kuber.namespace import KuberNamespace
 from over_provisioning.kuber.pod_creator import PodCreator
 from over_provisioning.kuber.pod_deleter import PodDeleter
 from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.kuber.pod_reader import PodReader
+from over_provisioning.logger import get_logger
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
-from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
-from over_provisioning.tests.loop_v3 import PodCreatingLoop
-from over_provisioning.tests.node_assigning_witer import NodesAssigningWaiter
-from over_provisioning.tests.pod_waiter import PodWaiter
-from over_provisioning.tests.pods_spawner import PodsSpawner
+from over_provisioning.test.pod_creating_loop import PodCreatingLoop
+from over_provisioning.test.node_assigning_witer import NodesAssigningWaiter
+from over_provisioning.test.pod_waiter import PodWaiter
+from over_provisioning.test.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
-from over_provisioning.tests.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.runner import OneOverProvisioningPodTest
+
+logger = get_logger()
+
+
+def run_test(
+        over_provisioning_test: OneOverProvisioningPodTest,
+        max_pod_creation_time_in_seconds: float,
+):
+    result = over_provisioning_test.run(max_pod_creation_time_in_seconds)
+
+    if result:
+        logger.info("Test pass ......................")
+        sys.exit(0)
+    else:
+        logger.info("Test failed ....................")
+        sys.exit(1)
 
 
 def main(
@@ -43,7 +62,7 @@ def main(
         over_provisioning_pods_namespace,
         pods_to_create_quantity,
     )
-    kuber = create_kuber(kubernetes_conf_path)
+    kuber = factory.create_kuber(kubernetes_conf_path)
 
     kubernetes_namespace_instance = KuberNamespace(kuber, kubernetes_namespace)
     over_provisioning_pods_finder = LabeledPodsFinder(

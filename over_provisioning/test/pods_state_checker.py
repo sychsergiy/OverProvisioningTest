@@ -1,7 +1,7 @@
 import typing as t
 
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
-from over_provisioning.tests.node_assigning_witer import NodesAssigningWaiter
+from over_provisioning.test.node_assigning_witer import NodesAssigningWaiter
 
 
 class OverProvisioningPodsStateChecker:

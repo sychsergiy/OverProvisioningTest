@@ -1,6 +1,6 @@
 from over_provisioning.logger import get_logger
-from over_provisioning.tests.pods_spawner import PodsSpawner, PodCreationTimeHitsLimitError
-from over_provisioning.tests.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.pods_spawner import PodsSpawner, PodCreationTimeHitsLimitError
+from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
 
 logger = get_logger()
 

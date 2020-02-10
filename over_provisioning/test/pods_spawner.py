@@ -2,7 +2,7 @@ import kubernetes
 
 from over_provisioning.kuber.pod_creator import PodCreator
 from over_provisioning.logger import get_logger
-from over_provisioning.tests.pod_waiter import PodWaiter
+from over_provisioning.test.pod_waiter import PodWaiter
 
 logger = get_logger()
 
