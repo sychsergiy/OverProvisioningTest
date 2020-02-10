@@ -3,7 +3,7 @@ import logging
 
 from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
-from over_provisioning.tests.pods_creator import PodsCreator
+from over_provisioning.tests.pods_spawner import PodsSpawner
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -18,7 +18,7 @@ class PodCreatingLoop:
 
     def __init__(
             self,
-            pods_creator: PodsCreator,
+            pods_creator: PodsSpawner,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
             nodes_finder: NodesFinder,
             pods_to_create_quantity: int = None,

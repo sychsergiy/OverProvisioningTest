@@ -17,7 +17,7 @@ from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
 # from over_provisioning.tests.one_pod_loop import PodCreatingLoop as PodCreatingLoopV1
 from over_provisioning.tests.loop_v3 import PodCreatingLoop as PodCreatingLoopV3
-from over_provisioning.tests.pods_creator import PodsCreator
+from over_provisioning.tests.pods_spawner import PodsSpawner
 
 
 def main(
@@ -48,7 +48,7 @@ def main(
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
-    pods_creator = PodsCreator(pod_creator, "test-pod")
+    pods_creator = PodsSpawner(pod_creator, "test-pod")
     pod_creating_loop = PodCreatingLoopV3(
         pods_creator, over_provisioning_pods_finder,
         nodes_finder, pods_to_create_quantity

@@ -15,7 +15,7 @@ class PodCreationTimeHitsLimitError(Exception):
         return f"Pod creating: {self.pod_name} time hit the limit: {self.creation_time_limit}."
 
 
-class PodsCreator:
+class PodsSpawner:
     def __init__(self, pod_creator: PodCreator, pods_base_name: str):
         self._pod_creator = pod_creator
         self._pods_base_name = pods_base_name
@@ -38,12 +38,12 @@ class PodsCreator:
         _, pod_creation_time = self._pod_creator.create_pod(pod_name)
         logger.info(f"Pod creation time: {pod_creation_time}")
 
+        self._created_pods_names.append(pod_name)
+
         logger.info(f"Wait until pod is ready")
         ok, pod_getting_ready_time = self._pod_creator.wait_until_pod_ready(pod_name, max_pod_creation_time)
         if not ok:
             raise PodCreationTimeHitsLimitError(pod_name, max_pod_creation_time)
         logger.info(f"Waited time: {pod_getting_ready_time}\n")
-
-        self._created_pods_names.append(pod_name)
 
         return pod_creation_time + pod_getting_ready_time

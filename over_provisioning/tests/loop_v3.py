@@ -2,7 +2,7 @@ import logging
 
 from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
-from over_provisioning.tests.pods_creator import PodsCreator, PodCreationTimeHitsLimitError
+from over_provisioning.tests.pods_spawner import PodsSpawner, PodCreationTimeHitsLimitError
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +13,7 @@ class PodCreatingLoop:
 
     def __init__(
             self,
-            pods_creator: PodsCreator,
+            pods_creator: PodsSpawner,
             over_provisioning_pods_finder: OverProvisioningPodsFinder,
             nodes_finder: NodesFinder,
             pods_to_create_quantity: int = None,
@@ -30,11 +30,18 @@ class PodCreatingLoop:
     def _create_next_pod(
             self, pod_sequence_number: int, max_pod_creation_time_in_seconds: float
     ) -> float:
-        waited_time = self._pods_creator.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
-        return waited_time
+        try:
+            self._pods_creator.create_pod(pod_sequence_number, max_pod_creation_time_in_seconds)
+        except PodCreationTimeHitsLimitError:
+            logger.exception("Pod creation failed")
+            return False
+        return True
 
     def run(self, max_pod_creation_time_in_seconds: float):
         i = 1
+
+        initial_over_prov_pods = self._over_provisioning_pods_finder.find_pods()
+
         while True:
             try:
                 self._create_next_pod(i, max_pod_creation_time_in_seconds)
