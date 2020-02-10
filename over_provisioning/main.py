@@ -15,7 +15,7 @@ from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
-from over_provisioning.tests.one_pod import PodCreatingLoop as PodCreatingLoopV1
+from over_provisioning.tests.one_pod_loop import PodCreatingLoop as PodCreatingLoopV1
 from over_provisioning.tests.pods_creator import PodsCreator
 
 
@@ -66,4 +66,4 @@ def main(
         pod_creating_loop, nodes_finder, env_setuper, pod_deleter,
     )
 
-    run_test(test_runner, max_pod_creation_time)
+    run_test(test_runner, settings.max_pod_creation_time_in_seconds)
