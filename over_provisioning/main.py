@@ -73,7 +73,10 @@ def main(
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
-    pod_waiter = PodWaiter(PodReader(kuber, settings.kubernetes_namespace))
+    pod_waiter = PodWaiter(
+        PodReader(kuber, settings.kubernetes_namespace),
+        0.5,  # read pod status with 0.5 seconds interval
+    )
     node_assigning_waiter = NodesAssigningWaiter(
         PodReader(kuber, settings.over_provisioning_pods_namespace),
         60 * 15,  # 60 wait on nodes assigning for 15 minutes
