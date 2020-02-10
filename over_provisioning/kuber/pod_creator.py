@@ -1,5 +1,3 @@
-import time
-
 from kubernetes import client
 
 from over_provisioning.utils import pinpoint_execution_time

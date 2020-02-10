@@ -47,10 +47,9 @@ class PodsSpawner:
 
         self._created_pods_names.append(pod_name)
 
-        logger.info(f"Wait until pod is ready")
-        ok, pod_getting_ready_time = self._pod_waiter.wait_on_running_status(
+        time_limit_not_hited = self._pod_waiter.wait_on_running_status(
             pod_name, max_pod_creation_time - pod_creation_time
         )
-        if not ok:
+        if not time_limit_not_hited:
             raise PodCreationTimeHitsLimitError(pod_name, max_pod_creation_time)
-        logger.info(f"Waited time: {pod_getting_ready_time}\n")
+
