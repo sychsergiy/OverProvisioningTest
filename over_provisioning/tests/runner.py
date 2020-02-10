@@ -2,7 +2,7 @@ import logging
 
 from over_provisioning.environment.setuper import EnvironmentSetuper
 from over_provisioning.kuber.pod_deleter import PodDeleter
-from over_provisioning.nodes_finder import NodesFinder
+from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.tests.one_pod import PodCreatingLoop
 
 logger = logging.getLogger(__name__)

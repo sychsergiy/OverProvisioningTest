@@ -11,12 +11,11 @@ from over_provisioning.environment.hooks import (
 from over_provisioning.kuber.namespace import KuberNamespace
 from over_provisioning.kuber.pod_creator import PodCreator
 from over_provisioning.kuber.pod_deleter import PodDeleter
-from over_provisioning.nodes_finder import NodesFinder
+from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
 from over_provisioning.tests.one_pod import PodCreatingLoop as PodCreatingLoopV1
-from over_provisioning.tests.multiple_pods import PodCreatingLoop as PodCreatingLoopV2
 from over_provisioning.tests.pods_creator import PodsCreator
 
 

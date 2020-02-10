@@ -2,7 +2,7 @@ import typing as t
 import enum
 import logging
 
-from over_provisioning.nodes_finder import NodesFinder
+from over_provisioning.kuber.nodes_finder import NodesFinder
 from over_provisioning.pods_finder import OverProvisioningPodsFinder
 from over_provisioning.tests.pods_creator import PodsCreator
 
