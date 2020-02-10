@@ -33,13 +33,15 @@ def main(
         nodes_label_selector: str,
         create_new_namespace: bool,
         pods_to_create_quantity: int,
+        local_development: bool
 ):
     settings = Settings(
         kubernetes_namespace,
         max_pod_creation_time,
         nodes_label_selector,
         over_provisioning_pods_label_selector,
-        over_provisioning_pods_namespace
+        over_provisioning_pods_namespace,
+        pods_to_create_quantity,
     )
     kuber = create_kuber(kubernetes_conf_path)
 
@@ -50,13 +52,17 @@ def main(
         label_selector=settings.over_provisioning_pods_label_selector,
     )
     pod_creator = PodCreator(kuber, settings.kubernetes_namespace)
-    pod_reader = PodReader(kuber, settings.kubernetes_namespace)
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
-    pod_waiter = PodWaiter(pod_reader)
-    node_assigning_waiter = NodesAssigningWaiter(pod_reader, 60 * 15)  # 60 wait on nodes assigning for 15 minutes
+    pod_waiter = PodWaiter(PodReader(kuber, settings.kubernetes_namespace))
+    node_assigning_waiter = NodesAssigningWaiter(
+        PodReader(kuber, settings.over_provisioning_pods_namespace),
+        60 * 15,  # 60 wait on nodes assigning for 15 minutes
+    )
 
-    pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", eks_development_pod_spec)
+    pod_spec = local_development_pod_spec if local_development else eks_development_pod_spec
+
+    pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", pod_spec)
     over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(
         over_provisioning_pods_finder, node_assigning_waiter
     )

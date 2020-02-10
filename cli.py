@@ -51,9 +51,16 @@ from over_provisioning.main import main
 @click.option(
     "-p",
     "--pods-to-create-quantity",
+    envvar="PODS_TO_CREATE_QUANTITY",
     type=click.INT,
     default=None,
     help="Quantity pods to create before finishing test. Created only for local running(to finish test)",
+)
+@click.option(
+    "--local-development/--no-local-development",
+    default=False,
+    help="Define local or non local running mode to choose."
+         " By default false. Options dependent on running mode: pod spec",
 )
 def run(
     kubernetes_conf_path: str,
@@ -64,6 +71,7 @@ def run(
     nodes_label_selector: str,
     create_new_namespace: bool,
     pods_to_create_quantity: int,
+    local_development: bool,
 ):
     main(
         kubernetes_conf_path,
@@ -73,7 +81,8 @@ def run(
         over_provisioning_pods_namespace,
         nodes_label_selector,
         create_new_namespace,
-        pods_to_create_quantity
+        pods_to_create_quantity,
+        local_development
     )
 
 
