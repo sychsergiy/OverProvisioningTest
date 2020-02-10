@@ -16,10 +16,12 @@ from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
-from over_provisioning.tests.loop_v3 import PodCreatingLoop, OverProvisioningPodsStateChecker, NodesAssigningWaiter
+from over_provisioning.tests.loop_v3 import PodCreatingLoop
+from over_provisioning.tests.node_assigning_witer import NodesAssigningWaiter
 from over_provisioning.tests.pod_waiter import PodWaiter
 from over_provisioning.tests.pods_spawner import PodsSpawner
-from over_provisioning.pod_specs import local_development_pod_spec
+from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
+from over_provisioning.tests.pods_state_checker import OverProvisioningPodsStateChecker
 
 
 def main(
@@ -52,9 +54,9 @@ def main(
     nodes_finder = NodesFinder(kuber, settings.nodes_label_selector)
 
     pod_waiter = PodWaiter(pod_reader)
-    node_assigning_waiter = NodesAssigningWaiter(pod_reader, 60 * 15) # 60 wait on nodes assigning for 15 minutes
+    node_assigning_waiter = NodesAssigningWaiter(pod_reader, 60 * 15)  # 60 wait on nodes assigning for 15 minutes
 
-    pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", local_development_pod_spec)
+    pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", eks_development_pod_spec)
     over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(
         over_provisioning_pods_finder, node_assigning_waiter
     )

@@ -13,10 +13,10 @@ eks_development_pod_spec = client.V1PodSpec(
     },
     containers=[client.V1Container(
         resources={
-            "limits": {"memory": "10737"},
-            "requests": {"cpu": 0.2, "memory": "5368"},
+            "limits": {"memory": "1Gi"},
+            "requests": {"cpu": "200m", "memory": "512Mi"},
         },
         name="test",
-        image="nginx",
+        image="k8s.gcr.io/pause:3.1",
     )]
 )

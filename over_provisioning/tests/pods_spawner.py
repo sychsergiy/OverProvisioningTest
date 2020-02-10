@@ -1,4 +1,3 @@
-import logging
 import kubernetes
 
 from over_provisioning.kuber.pod_creator import PodCreator
@@ -42,7 +41,7 @@ class PodsSpawner:
         pod_name = self._construct_pod_name(pod_sequence_number)
 
         logger.info(f"Init pod creation. Pod name: {pod_name}")
-        _, pod_creation_time = self._pod_creator.create_pod(pod_name, self._pod_spec)
+        pod_creation_time = self._pod_creator.create_pod(pod_name, self._pod_spec)
         logger.info(f"Pod creation time: {pod_creation_time}")
 
         self._created_pods_names.append(pod_name)
