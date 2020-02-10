@@ -1,6 +1,6 @@
 import logging
 
-from over_provisioning.pod_creator import PodCreator
+from over_provisioning.kuber.pod_creator import PodCreator
 
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)

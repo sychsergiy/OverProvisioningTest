@@ -1,12 +1,17 @@
-from over_provisioning.environment_setuper import (
+from over_provisioning.environment.setuper import (
     EnvironmentSetuper,
+
+)
+from over_provisioning.environment.hooks import (
     CreateNamespaceHook,
     DeleteNamespaceHook,
     CheckNamespaceExistsHook,
 )
-from over_provisioning.kuber_namespace import KuberNamespace
+
+from over_provisioning.kuber.namespace import KuberNamespace
+from over_provisioning.kuber.pod_creator import PodCreator
+from over_provisioning.kuber.pod_deleter import PodDeleter
 from over_provisioning.nodes_finder import NodesFinder
-from over_provisioning.pod_creator import PodCreator, PodDeleter
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
