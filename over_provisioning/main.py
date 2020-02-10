@@ -19,7 +19,7 @@ from over_provisioning.logger import get_logger
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test.pod_creating_loop import PodCreatingLoop
-from over_provisioning.test.node_assigning_witer import NodesAssigningWaiter
+from over_provisioning.test.node_assigning_waiter import NodesAssigningWaiter
 from over_provisioning.test.pod_waiter import PodWaiter
 from over_provisioning.test.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
