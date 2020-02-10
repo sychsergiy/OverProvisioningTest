@@ -18,7 +18,7 @@ class EnvironmentSetuper:
         self._destroy_hooks.append(hook)
 
     def __enter__(self):
-        return self
+        return self.create()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.destroy()
@@ -27,7 +27,7 @@ class EnvironmentSetuper:
 
     def create(self) -> bool:
         try:
-            logger.info("Trying to destroy environment")
+            logger.info("Trying to create environment")
             for hook in self._create_hooks:
                 hook.run()
             logger.info("Environment successfully created")
