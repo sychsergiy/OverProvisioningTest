@@ -16,8 +16,7 @@ from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
 from over_provisioning.test import create_kuber, OneOverProvisioningPodTest, run_test
-# from over_provisioning.tests.one_pod_loop import PodCreatingLoop
-from over_provisioning.tests.loop_v3 import PodCreatingLoop
+from over_provisioning.tests.loop_v3 import PodCreatingLoop, OverProvisioningPodsStateChecker
 from over_provisioning.tests.pod_waiter import PodWaiter
 from over_provisioning.tests.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec
@@ -55,9 +54,10 @@ def main(
     pod_waiter = PodWaiter(pod_reader)
 
     pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", local_development_pod_spec)
+    over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(over_provisioning_pods_finder)
     pod_creating_loop = PodCreatingLoop(
-        pods_spawner, over_provisioning_pods_finder,
-        nodes_finder, pods_to_create_quantity
+        pods_spawner, over_provisioning_pods_state_checker,
+        pods_to_create_quantity
     )
 
     env_setuper = EnvironmentSetuper()
