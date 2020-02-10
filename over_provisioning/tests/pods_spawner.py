@@ -2,10 +2,10 @@ import logging
 import kubernetes
 
 from over_provisioning.kuber.pod_creator import PodCreator
+from over_provisioning.logger import get_logger
 from over_provisioning.tests.pod_waiter import PodWaiter
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger()
 
 
 class PodCreationTimeHitsLimitError(Exception):

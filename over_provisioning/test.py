@@ -1,12 +1,11 @@
-import logging
 import sys
 
 from kubernetes import client, config
 
+from over_provisioning.logger import get_logger
 from over_provisioning.tests.runner import OneOverProvisioningPodTest
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger()
 
 
 def create_kuber(config_file_path=None):

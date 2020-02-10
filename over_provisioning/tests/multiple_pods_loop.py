@@ -1,13 +1,12 @@
 import typing as t
 import enum
-import logging
 
 from over_provisioning.kuber.nodes_finder import NodesFinder
+from over_provisioning.logger import get_logger
 from over_provisioning.pods_finder import OverProvisioningPodsFinder
 from over_provisioning.tests.pods_spawner import PodsSpawner
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+logger = get_logger()
 
 
 class OverProvisioningPodsStatusChecker:

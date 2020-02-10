@@ -1,11 +1,11 @@
 import time
 import typing as t
-import logging
 
 from kubernetes import client
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.INFO)
+from over_provisioning.logger import get_logger
+
+logger = get_logger()
 
 
 class Pod(t.NamedTuple):
