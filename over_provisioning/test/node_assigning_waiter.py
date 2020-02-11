@@ -17,35 +17,32 @@ class NodesAssigningWaiter:
 
         self._pods_with_unassigned_nodes: t.Set[str] = set()
 
-    def _check_nodes_assigned(self, pods_to_check: t.Iterable[str]) -> t.Iterable[Pod]:
-        for pod_name in pods_to_check:
-            is_node_assigned, node_name = self._node_was_assigned(pod_name)
-            if is_node_assigned:
-                yield Pod(pod_name, node_name)
+    def _all_pods_has_assigned_nodes(self) -> bool:
+        return len(self._pods_with_unassigned_nodes) == 0
 
-    def _updated_pods_with_unassigned_nodes(self, pods_with_assigned_nodes: t.Iterable[Pod]):
-        for pod in pods_with_assigned_nodes:
-            logger.info(f"New node: {pod.node_name}  assigned for pod: {pod.name}")
-            self._pods_with_unassigned_nodes.remove(pod.name)
-
-    def wait_on_pods(self, pods_names: t.Iterable[str]):
+    def wait_on_pods(self, pods_names: t.List[str]):
         self._pods_with_unassigned_nodes = set(pods_names)
 
         with Timer() as timer:
-            while self._pods_with_unassigned_nodes.copy():
+            while not self._all_pods_has_assigned_nodes():
+                pods_to_check = self._pods_with_unassigned_nodes.copy()
                 logger.info(
-                    f"Waiting on assigning nodes for the following pods: {str(self._pods_with_unassigned_nodes)}."
-                    f" Waited time: {timer.elapsed} seconds"
+                    f"Waiting on assigning nodes for the following pods: {str(pods_to_check)}."
+                    f" Waited time: {timer.elapsed}"
                 )
-                pods_with_assigned_nodes = self._check_nodes_assigned(self._pods_with_unassigned_nodes)
-                self._updated_pods_with_unassigned_nodes(pods_with_assigned_nodes)
+
+                for pod_name in pods_to_check:
+                    is_assigned, node_name = self._node_was_assigned(pod_name)
+                    if is_assigned:
+                        self._pods_with_unassigned_nodes.remove(pod_name)
+                        logger.info(f"New node: {node_name}  assigned for pod: {pod_name}")
 
                 if self._is_time_limit_exhausted(timer.elapsed):
                     return False
 
                 self._wait(self._wait_interval)
 
-        logger.info(f"All over provisioning pods was assigned to new nodes. Waited time: {timer.elapsed} seconds")
+        logger.info(f"All over provisioning pods was assigned to new nodes. Waited time: {timer.elapsed}")
         return True
 
     @staticmethod
