@@ -23,7 +23,7 @@ class NodesAssigningWaiter:
 
     def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_time: float):
         self._pods_with_unassigned_nodes.remove(pod_name)
-        logger.info(f"New node: {node_assigning_time}  assigned for pod: {pod_name}")
+        logger.info(f"New node: {node_name}  assigned for pod: {pod_name}, assigning time: {node_assigning_time}")
         self._report_builder.add_over_provisioning_pod_report(pod_name, node_name, node_assigning_time)
 
     def wait_on_pods(self, pods_names: t.List[str]):

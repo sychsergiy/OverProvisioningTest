@@ -30,7 +30,10 @@ class PodCreatingLoop:
     ) -> float:
         try:
             pod_name, creation_time = self._pods_spawner.create_pod(pod_name_suffix, max_pod_creation_time_in_seconds)
-            self._report_builder.add_pod_creation_report(pod_name, creation_time)
+            if pod_name_suffix == "extra":
+                self._report_builder.set_extra_pod_creation_time(creation_time)
+            else:
+                self._report_builder.add_pod_creation_report(pod_name, creation_time)
         except PodCreationTimeHitsLimitError:
             logger.exception("Pod creation failed")
             return False
