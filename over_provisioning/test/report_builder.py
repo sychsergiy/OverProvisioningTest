@@ -8,6 +8,7 @@ class PodCreationReport(t.NamedTuple):
 
 class OverProvisioningPodReport(t.NamedTuple):
     pod_name: str
+    assigned_node: str
     node_assigning_time: float
 
 
@@ -26,8 +27,10 @@ class ReportBuilder:
     def add_pod_creation_report(self, pod_name: str, creation_time: float):
         self._pod_creation_reports.append(PodCreationReport(pod_name, creation_time))
 
-    def add_over_provisioning_pod_report(self, pod_name: str, node_assigning_time: float):
-        self._over_provisioning_pod_reports.append(OverProvisioningPodReport(pod_name, node_assigning_time))
+    def add_over_provisioning_pod_report(self, pod_name: str, assigned_node, node_assigning_time: float):
+        self._over_provisioning_pod_reports.append(
+            OverProvisioningPodReport(pod_name, assigned_node, node_assigning_time)
+        )
 
     def set_nodes_report(self, quantity_before_start: int, quantity_after_end: int):
         self._nodes_report = NodesReport(quantity_before_start, quantity_after_end)
@@ -49,4 +52,5 @@ class ReportBuilder:
             "amount_of_created_pods": len(self._pod_creation_reports),
             "average_pod_creation_time": self._calc_average_pod_creation_time(),
             "extra_pod_creation_time": self._extra_pod_creation_time,
+            "over_provisioning": [report._asdict() for report in self._over_provisioning_pod_reports]
         }

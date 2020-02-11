@@ -3,21 +3,28 @@ import time
 
 from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.logger import get_logger
+from over_provisioning.test.report_builder import ReportBuilder
 from over_provisioning.timer import Timer
 
 logger = get_logger()
 
 
 class NodesAssigningWaiter:
-    def __init__(self, pod_reader: PodReader, max_waiting_time: float, wait_interval: float = 60):
+    def __init__(self, pod_reader: PodReader, report_builder: ReportBuilder, max_waiting_time: float, wait_interval: float = 60):
         self._pod_reader = pod_reader
         self._max_waiting_time = max_waiting_time
         self._wait_interval = wait_interval
+        self._report_builder = report_builder
 
         self._pods_with_unassigned_nodes: t.Set[str] = set()
 
     def _all_pods_has_assigned_nodes(self) -> bool:
         return len(self._pods_with_unassigned_nodes) == 0
+
+    def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_time: float):
+        self._pods_with_unassigned_nodes.remove(pod_name)
+        logger.info(f"New node: {node_assigning_time}  assigned for pod: {pod_name}")
+        self._report_builder.add_over_provisioning_pod_report(pod_name, node_name, node_assigning_time)
 
     def wait_on_pods(self, pods_names: t.List[str]):
         self._pods_with_unassigned_nodes = set(pods_names)
@@ -33,8 +40,9 @@ class NodesAssigningWaiter:
                 for pod_name in pods_to_check:
                     is_assigned, node_name = self._node_was_assigned(pod_name)
                     if is_assigned:
-                        self._pods_with_unassigned_nodes.remove(pod_name)
-                        logger.info(f"New node: {node_name}  assigned for pod: {pod_name}")
+                        # todo: track start time as time of pod creation
+                        #  instead of time when script start's waiting on nodes assigning
+                        self._set_that_node_was_assigned(pod_name, node_name, timer.elapsed)
 
                 if self._is_time_limit_exhausted(timer.elapsed):
                     return False

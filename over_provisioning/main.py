@@ -83,8 +83,11 @@ def main(
         PodReader(kuber, settings.kubernetes_namespace),
         0.5,  # read pod status with 0.5 seconds interval
     )
+    report_builder = ReportBuilder()
+
     node_assigning_waiter = NodesAssigningWaiter(
         PodReader(kuber, settings.over_provisioning_pods_namespace),
+        report_builder,
         60 * 15,  # 60 wait on nodes assigning for 15 minutes
     )
 
@@ -94,7 +97,6 @@ def main(
     over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(
         over_provisioning_pods_finder, node_assigning_waiter
     )
-    report_builder = ReportBuilder()
 
     pod_creating_loop = PodCreatingLoop(
         pods_spawner, over_provisioning_pods_state_checker, report_builder,
