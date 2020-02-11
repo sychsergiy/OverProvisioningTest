@@ -27,13 +27,19 @@ class PodCreatingLoop:
 
     def _create_next_pod(
             self, pod_name_suffix: str, max_pod_creation_time_in_seconds: float
-    ) -> float:
+    ) -> bool:
         try:
             pod_name, creation_time = self._pods_spawner.create_pod(pod_name_suffix, max_pod_creation_time_in_seconds)
-            if pod_name_suffix == "extra":
-                self._report_builder.set_extra_pod_creation_time(creation_time)
-            else:
-                self._report_builder.add_pod_creation_report(pod_name, creation_time)
+            self._report_builder.add_pod_creation_report(pod_name, creation_time)
+        except PodCreationTimeHitsLimitError:
+            logger.exception("Pod creation failed")
+            return False
+        return True
+
+    def _create_extra_pod(self, max_pod_creation_time_in_seconds: float) -> bool:
+        try:
+            pod_name, creation_time = self._pods_spawner.create_pod("extra", max_pod_creation_time_in_seconds)
+            self._report_builder.set_extra_pod_creation_time(creation_time)
         except PodCreationTimeHitsLimitError:
             logger.exception("Pod creation failed")
             return False
@@ -53,7 +59,7 @@ class PodCreatingLoop:
                 logger.info(f"The following over provisioning pods was created: {str(newly_created_pods)}")
 
             if self._over_provisioning_state_checker.last_pod_was_removed():
-                last_pod_created_without_delay = self._create_next_pod("extra", max_pod_creation_time_in_seconds)
+                last_pod_created_without_delay = self._create_extra_pod(max_pod_creation_time_in_seconds)
 
                 if last_pod_created_without_delay:
                     # todo: measure time of nodes creation
