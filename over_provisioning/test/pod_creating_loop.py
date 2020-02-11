@@ -1,6 +1,7 @@
 from over_provisioning.logger import get_logger
 from over_provisioning.test.pods_spawner import PodsSpawner, PodCreationTimeHitsLimitError
 from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.report_builder import ReportBuilder
 
 logger = get_logger()
 
@@ -12,12 +13,14 @@ class PodCreatingLoop:
             self,
             pods_spawner: PodsSpawner,
             over_provisioning_pods_state_checker: OverProvisioningPodsStateChecker,
+            report_builder: ReportBuilder,
             pods_to_create_quantity: int = None,
     ):
         self._pods_spawner = pods_spawner
         self._over_provisioning_state_checker = over_provisioning_pods_state_checker
 
         self._pods_to_create_quantity = pods_to_create_quantity
+        self._report_builder = report_builder
 
     def get_created_pods(self):
         return self._pods_spawner.get_created_pods()
@@ -26,7 +29,8 @@ class PodCreatingLoop:
             self, pod_name_suffix: str, max_pod_creation_time_in_seconds: float
     ) -> float:
         try:
-            self._pods_spawner.create_pod(pod_name_suffix, max_pod_creation_time_in_seconds)
+            pod_name, creation_time = self._pods_spawner.create_pod(pod_name_suffix, max_pod_creation_time_in_seconds)
+            self._report_builder.add_pod_creation_report(pod_name, creation_time)
         except PodCreationTimeHitsLimitError:
             logger.exception("Pod creation failed")
             return False

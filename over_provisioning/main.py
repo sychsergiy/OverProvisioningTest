@@ -1,4 +1,5 @@
 import sys
+import json
 
 from over_provisioning.environment.setuper import (
     EnvironmentSetuper,
@@ -25,6 +26,7 @@ from over_provisioning.test.pods_cleaner import PodsCleaner
 from over_provisioning.test.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
 from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.report_builder import ReportBuilder
 from over_provisioning.test.runner import OneOverProvisioningPodTest
 
 logger = get_logger()
@@ -34,7 +36,10 @@ def run_test(
         over_provisioning_test: OneOverProvisioningPodTest,
         max_pod_creation_time_in_seconds: float,
 ):
-    result = over_provisioning_test.run(max_pod_creation_time_in_seconds)
+    result, report = over_provisioning_test.run(max_pod_creation_time_in_seconds)
+
+    with open("report.json", "w") as f:
+        json.dump(report, f)
 
     if result:
         logger.info("Test pass ......................")
@@ -89,8 +94,10 @@ def main(
     over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(
         over_provisioning_pods_finder, node_assigning_waiter
     )
+    report_builder = ReportBuilder()
+
     pod_creating_loop = PodCreatingLoop(
-        pods_spawner, over_provisioning_pods_state_checker,
+        pods_spawner, over_provisioning_pods_state_checker, report_builder,
         pods_to_create_quantity
     )
 
@@ -105,7 +112,7 @@ def main(
 
     pods_cleaner = PodsCleaner(pod_deleter)
     test_runner = OneOverProvisioningPodTest(
-        pod_creating_loop, nodes_finder, env_setuper, pods_cleaner,
+        pod_creating_loop, nodes_finder, env_setuper, pods_cleaner, report_builder
     )
 
     run_test(test_runner, settings.max_pod_creation_time_in_seconds)

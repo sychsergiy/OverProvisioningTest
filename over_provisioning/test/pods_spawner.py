@@ -1,8 +1,10 @@
 import kubernetes
+import typing as t
 
 from over_provisioning.kuber.pod_creator import PodCreator
 from over_provisioning.logger import get_logger
 from over_provisioning.test.pod_waiter import PodWaiter
+from over_provisioning.test.report_builder import ReportBuilder
 
 logger = get_logger()
 
@@ -34,7 +36,7 @@ class PodsSpawner:
     def get_created_pods(self):
         return self._created_pods_names
 
-    def create_pod(self, pod_name_suffix: str, max_pod_creation_time: float):
+    def create_pod(self, pod_name_suffix: str, max_pod_creation_time: float) -> t.Tuple[str, float]:
         """
         returns time waited until pod ready and created pod_name
         """
@@ -46,9 +48,10 @@ class PodsSpawner:
 
         self._created_pods_names.append(pod_name)
 
-        time_limit_not_hited = self._pod_waiter.wait_on_running_status(
+        time_limit_not_hited, waited_time = self._pod_waiter.wait_on_running_status(
             pod_name, max_pod_creation_time - pod_creation_time
         )
         if not time_limit_not_hited:
             raise PodCreationTimeHitsLimitError(pod_name, max_pod_creation_time)
 
+        return pod_name, pod_creation_time + waited_time

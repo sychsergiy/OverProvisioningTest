@@ -3,7 +3,6 @@ import time
 
 from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.logger import get_logger
-from over_provisioning.pods_finder import Pod
 from over_provisioning.timer import Timer
 
 logger = get_logger()
