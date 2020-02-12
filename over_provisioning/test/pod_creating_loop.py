@@ -68,20 +68,22 @@ class PodCreatingLoop:
 
             if self._over_provisioning_pods_state.last_pod_was_removed():
                 last_pod_created_without_delay = self._create_extra_pod(max_pod_creation_time_in_seconds)
-                print(self._over_provisioning_pods_state.pods_creation_time_map)
+                self._report_builder.set_op_pods_time_creation_map(
+                    self._over_provisioning_pods_state.pods_creation_time_map
+                )
                 if last_pod_created_without_delay:
-                    # todo: measure time of nodes creation
-
                     pods_to_wait_on = self._over_provisioning_pods_state.created_pods
 
                     self._node_assigning_waiter.set_pods_to_wait_on(pods_to_wait_on)
                     if not self._node_assigning_waiter.wait():
-                        print(self._node_assigning_waiter.pods_node_assigning_time_map)
-
+                        self._report_builder.set_op_pods_nodes_assigning_time_map(
+                            self._node_assigning_waiter.pods_node_assigning_time_map
+                        )
                         self._node_assigning_timeout_handler.handle()
-                        logger.info("Finish the test because of the limit on waiting for node assigning")
                         return False
-                    print(self._node_assigning_waiter.pods_node_assigning_time_map)
+                    self._report_builder.set_op_pods_nodes_assigning_time_map(
+                        self._node_assigning_waiter.pods_node_assigning_time_map
+                    )
 
                     if self._over_provisioning_pods_state.is_all_pods_recreated_on_new_nodes():
                         return True

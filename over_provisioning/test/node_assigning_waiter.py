@@ -3,7 +3,7 @@ import time
 
 from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.logger import get_logger
-from over_provisioning.test.report_builder import ReportBuilder
+from over_provisioning.test.report_builder import ReportBuilder, NodeAssigning
 from over_provisioning.timer import Timer
 
 logger = get_logger()
@@ -19,19 +19,20 @@ class NodesAssigningWaiter:
 
         self._pods_to_wait_on: t.Set[str] = set()
 
-        self._pods_node_assigning_time_map: t.Dict[str, float] = {}
+        self._pods_node_assigning_time_map: t.Dict[str, NodeAssigning] = {}
 
     def _all_pods_has_assigned_node(self) -> bool:
         return len(self._pods_to_wait_on) == 0
 
-    def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_time: float):
+    def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_timestamp: float):
         self._pods_to_wait_on.remove(pod_name)
-        logger.info(f"New node: {node_name}  assigned for pod: {pod_name}")
-        self._report_builder.add_over_provisioning_pod_report(pod_name, node_name, node_assigning_time)
-        self._pods_node_assigning_time_map[pod_name] = node_assigning_time
+        logger.info(
+            f"New node: {node_name}  assigned for pod: {pod_name}. Assigning timestamp: {node_assigning_timestamp}"
+        )
+        self._pods_node_assigning_time_map[pod_name] = NodeAssigning(pod_name, node_assigning_timestamp)
 
     @property
-    def pods_node_assigning_time_map(self)-> t.Dict[str, float]:
+    def pods_node_assigning_time_map(self) -> t.Dict[str, NodeAssigning]:
         return self._pods_node_assigning_time_map
 
     def set_pods_to_wait_on(self, pods_names: t.Iterable[str]):
