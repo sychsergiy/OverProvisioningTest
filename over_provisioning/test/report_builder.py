@@ -25,7 +25,7 @@ class NodesReport(t.NamedTuple):
 class ReportBuilder:
     def __init__(self):
         self._pod_creation_reports: t.List[PodCreationReport] = []
-        self._nodes_report: t.Optional[NodesReport] = None
+        self._nodes_report: t.Optional[NodesReport] = NodesReport(None, None)
         self._extra_pod_creation_time: float = 0
 
         self._op_pods_time_creation_map: t.Dict[str, float] = {}
@@ -58,6 +58,23 @@ class ReportBuilder:
         total_sum = sum([report.creation_time for report in self._pod_creation_reports])
         return total_sum / quantity
 
+    def _construct_over_provisioning(self) -> dict:
+        result = dict()
+
+        for pod_name, time_creation in self._op_pods_time_creation_map.items():
+            result[pod_name] = {
+                "creation_time": time_creation
+            }
+            node_assigning = self._op_pods_node_assigning_map.get(pod_name)
+            if node_assigning:
+                time_to_create = node_assigning.timestamp - time_creation
+                result[pod_name].update({
+                    "node_assigning_time": node_assigning.timestamp,
+                    "time_to_assign_node": time_to_create,
+                    "assigned_node": node_assigning.node_name
+                })
+        return result
+
     def build_report(self) -> dict:
         return {
             "nodes_before_start": self._nodes_report.quantity_before_start,
@@ -65,11 +82,33 @@ class ReportBuilder:
             "amount_of_created_pods": len(self._pod_creation_reports),
             "average_pod_creation_time": self._calc_average_pod_creation_time(),
             "extra_pod_creation_time": self._extra_pod_creation_time,
-            "over_provisioning": {
-                "creation_time_map": self._op_pods_time_creation_map,
-                "node_assigning_map": {
-                    pod: node_assigning._asdict() for pod, node_assigning in self._op_pods_node_assigning_map.items()
-                },
-            },
+            "over_provisioning_pods": self._construct_over_provisioning(),
             "errors": self._errors,
         }
+
+
+def test_build_report():
+    report_builder = ReportBuilder()
+    report_builder.set_op_pods_time_creation_map(
+        {"test1": 100, "test2": 100}
+    )
+    report_builder.set_op_pods_nodes_assigning_time_map(
+        {"test1": NodeAssigning("test_node1", 150), "test2": NodeAssigning("test_node2", 150)}
+    )
+    result = report_builder.build_report()
+
+    expected_result = {
+        "nodes_before_start": None,
+        "nodes_after_end": None,
+        "amount_of_created_pods": 0,
+        "average_pod_creation_time": 0,
+        "extra_pod_creation_time": 0,
+        "over_provisioning_pods": {
+            "test1": {"creation_time": 100, "assigned_node": "test_node1", "time_to_assign_node": 50,
+                      "node_assigning_time": 150},
+            "test2": {"creation_time": 100, "assigned_node": "test_node2", "time_to_assign_node": 50,
+                      "node_assigning_time": 150},
+        },
+        "errors": [],
+    }
+    assert expected_result == result
