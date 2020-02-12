@@ -59,7 +59,8 @@ def main(
         nodes_label_selector: str,
         create_new_namespace: bool,
         pods_to_create_quantity: int,
-        local_development: bool
+        local_development: bool,
+        max_amount_of_nodes: int,
 ):
     settings = Settings(
         kubernetes_namespace,
@@ -68,6 +69,7 @@ def main(
         over_provisioning_pods_label_selector,
         over_provisioning_pods_namespace,
         pods_to_create_quantity,
+        max_amount_of_nodes,
     )
     kuber = factory.create_kuber(kubernetes_conf_path)
 
@@ -99,7 +101,9 @@ def main(
         over_provisioning_pods_finder, node_assigning_waiter
     )
 
-    nodes_assigning_timeout_handler = NodesAssigningTimeoutHandler(report_builder, nodes_finder, 10)
+    nodes_assigning_timeout_handler = NodesAssigningTimeoutHandler(
+        report_builder, nodes_finder, settings.max_amount_of_nodes
+    )
 
     pod_creating_loop = PodCreatingLoop(
         pods_spawner, over_provisioning_pods_state_checker, nodes_assigning_timeout_handler, report_builder,

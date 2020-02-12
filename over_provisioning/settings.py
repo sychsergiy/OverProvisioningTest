@@ -27,7 +27,8 @@ class Settings:
         nodes_label_selector: str,
         over_provisioning_pods_label_selector: str,
         over_provisioning_pods_namespace: str,
-        pods_to_create_quantity: int
+        pods_to_create_quantity: int,
+        max_amount_of_nodes: int,
     ):
         self.kubernetes_namespace = kubernetes_namespace
         self.max_pod_creation_time_in_seconds = max_pod_creation_time_in_seconds
@@ -35,6 +36,16 @@ class Settings:
         self.over_provisioning_pods_label_selector = over_provisioning_pods_label_selector
         self.over_provisioning_pods_namespace = over_provisioning_pods_namespace
         self.pods_to_create_quantity = pods_to_create_quantity
+        self.max_amount_of_nodes = max_amount_of_nodes
+
+    @property
+    def max_amount_of_nodes(self):
+        return self._max_amount_of_nodes
+
+    @max_amount_of_nodes.setter
+    def max_amount_of_nodes(self, value):
+        self._validate_not_none(value, "max_amount_of_nodes")
+        self._max_amount_of_nodes = value
 
     @property
     def pods_to_create_quantity(self):
@@ -42,6 +53,7 @@ class Settings:
 
     @pods_to_create_quantity.setter
     def pods_to_create_quantity(self, value):
+        # can be empty
         self._pods_to_create_quantity = value
 
     @property

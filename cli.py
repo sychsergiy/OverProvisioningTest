@@ -62,6 +62,12 @@ from over_provisioning.main import main
     help="Define local or non local running mode to choose."
          " By default false. Options dependent on running mode: pod spec",
 )
+@click.option(
+    "--max-amount-of-nodes",
+    envvar="MAX_AMOUNT_OF_NODES",
+    type=click.INT,
+    help="Define max quantity of EC2 instances(nodes) which can be created"
+)
 def run(
     kubernetes_conf_path: str,
     kubernetes_namespace: str,
@@ -72,6 +78,7 @@ def run(
     create_new_namespace: bool,
     pods_to_create_quantity: int,
     local_development: bool,
+    max_amount_of_nodes: int,
 ):
     main(
         kubernetes_conf_path,
@@ -82,7 +89,8 @@ def run(
         nodes_label_selector,
         create_new_namespace,
         pods_to_create_quantity,
-        local_development
+        local_development,
+        max_amount_of_nodes,
     )
 
 

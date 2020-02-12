@@ -10,6 +10,7 @@ local_run:
       --nodes-label-selector="over_prov_pod"  \
       --create-new-namespace \
       --pods-to-create-quantity=3 \
+      --max-amount-of-nodes=15 \
       --local-development
 
 run:
@@ -19,4 +20,5 @@ run:
       --over-provisioning-pods-label-selector="app.kubernetes.io/name=cluster-overprovisioner" \
       --over-provisioning-pods-namespace="jhub" \
       --nodes-label-selector="kubernetes.io/role=worker"  \
+      --max-amount-of-nodes=4 \
       --create-new-namespace \
