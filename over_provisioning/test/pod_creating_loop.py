@@ -1,4 +1,5 @@
 from over_provisioning.logger import get_logger
+from over_provisioning.test.nodes_assigning_timeout_handler import NodesAssigningTimeoutHandler
 from over_provisioning.test.pods_spawner import PodsSpawner, PodCreationTimeHitsLimitError
 from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
 from over_provisioning.test.report_builder import ReportBuilder
@@ -13,11 +14,13 @@ class PodCreatingLoop:
             self,
             pods_spawner: PodsSpawner,
             over_provisioning_pods_state_checker: OverProvisioningPodsStateChecker,
+            node_assigning_timeout_handler: NodesAssigningTimeoutHandler,
             report_builder: ReportBuilder,
             pods_to_create_quantity: int = None,
     ):
         self._pods_spawner = pods_spawner
         self._over_provisioning_state_checker = over_provisioning_pods_state_checker
+        self._node_assigning_timeout_handler = node_assigning_timeout_handler
 
         self._pods_to_create_quantity = pods_to_create_quantity
         self._report_builder = report_builder
@@ -65,6 +68,7 @@ class PodCreatingLoop:
                     # todo: measure time of nodes creation
 
                     if not self._over_provisioning_state_checker.wait_on_nodes_assigning():
+                        self._node_assigning_timeout_handler.handle()
                         logger.info("Finish the test because of the limit on waiting for node assigning")
                         return False
                     if self._over_provisioning_state_checker.is_all_pods_recreated_on_new_nodes():

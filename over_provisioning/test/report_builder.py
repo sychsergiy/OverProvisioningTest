@@ -24,6 +24,11 @@ class ReportBuilder:
         self._nodes_report: t.Optional[NodesReport] = None
         self._extra_pod_creation_time: float = 0
 
+        self._errors: t.List[str] = []
+
+    def add_error(self, error_message: str):
+        self._errors.append(error_message)
+
     def add_pod_creation_report(self, pod_name: str, creation_time: float):
         self._pod_creation_reports.append(PodCreationReport(pod_name, creation_time))
 
@@ -52,5 +57,6 @@ class ReportBuilder:
             "amount_of_created_pods": len(self._pod_creation_reports),
             "average_pod_creation_time": self._calc_average_pod_creation_time(),
             "extra_pod_creation_time": self._extra_pod_creation_time,
-            "over_provisioning": [report._asdict() for report in self._over_provisioning_pod_reports]
+            "over_provisioning": [report._asdict() for report in self._over_provisioning_pod_reports],
+            "errors": self._errors,
         }
