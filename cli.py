@@ -5,7 +5,9 @@ from over_provisioning.main import main
 
 @click.command()
 @click.argument(
-    "kubernetes_conf_path", envvar="KUBERNETES_CONF_PATH", type=click.Path(exists=True),
+    "kubernetes_conf_path",
+    envvar="KUBERNETES_CONF_PATH",
+    type=click.Path(exists=True),
 )
 @click.option(
     "-n",
@@ -18,7 +20,7 @@ from over_provisioning.main import main
     "--create-new-namespace/--no-create-new-namespace",
     default=True,
     help="Create new kubernetes namespace or use existent. "
-         "By default create's new. In this namespace pods will be spawned",
+    "By default create's new. In this namespace pods will be spawned",
 )
 @click.option(
     "-t",
@@ -60,13 +62,13 @@ from over_provisioning.main import main
     "--local-development/--no-local-development",
     default=False,
     help="Define local or non local running mode to choose."
-         " By default false. Options dependent on running mode: pod spec",
+    " By default false. Options dependent on running mode: pod spec",
 )
 @click.option(
     "--max-amount-of-nodes",
     envvar="MAX_AMOUNT_OF_NODES",
     type=click.INT,
-    help="Define max quantity of EC2 instances(nodes) which can be created"
+    help="Define max quantity of EC2 instances(nodes) which can be created",
 )
 def run(
     kubernetes_conf_path: str,

@@ -7,8 +7,9 @@ from over_provisioning.test.node_assigning_waiter import NodesAssigningWaiter
 
 class OverProvisioningPodsState:
     def __init__(
-            self, over_provisioning_pods_finder: OverProvisioningPodsFinder,
-            node_assigning_waiter: NodesAssigningWaiter
+        self,
+        over_provisioning_pods_finder: OverProvisioningPodsFinder,
+        node_assigning_waiter: NodesAssigningWaiter,
     ):
         self._over_provisioning_pods_finder = over_provisioning_pods_finder
         self._node_assigning_waiter = node_assigning_waiter
@@ -51,7 +52,9 @@ class OverProvisioningPodsState:
     def _all_old_was_pods_removed(self, current_pods: t.List[Pod]) -> bool:
         initial_pods_names = [pod.name for pod in self._initial_pods]
         current_pods_names = [pod.name for pod in current_pods]
-        old_pods_names = set(initial_pods_names).intersection(set(current_pods_names))
+        old_pods_names = set(initial_pods_names).intersection(
+            set(current_pods_names)
+        )
         return len(old_pods_names) == 0
 
     def last_pod_was_removed(self) -> bool:

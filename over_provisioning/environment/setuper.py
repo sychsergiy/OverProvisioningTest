@@ -7,7 +7,11 @@ logger = get_logger()
 
 
 class EnvironmentSetuper:
-    def __init__(self, create_hooks: t.List[EnvironmentHook] = None, destroy_hooks: t.List[EnvironmentHook] = None):
+    def __init__(
+        self,
+        create_hooks: t.List[EnvironmentHook] = None,
+        destroy_hooks: t.List[EnvironmentHook] = None,
+    ):
         self._create_hooks = create_hooks or []
         self._destroy_hooks = destroy_hooks or []
 
@@ -33,7 +37,9 @@ class EnvironmentSetuper:
             logger.info("Environment successfully created")
             return True
         except Exception:
-            logger.exception("Failed to setup environment due to the following exception.")
+            logger.exception(
+                "Failed to setup environment due to the following exception."
+            )
             return False
 
     def destroy(self) -> bool:
@@ -44,6 +50,8 @@ class EnvironmentSetuper:
             logger.info("Environment successfully destroyed")
             return True
         except Exception:
-            logger.exception("Failed to destroy environment due to the following exception.")
+            logger.exception(
+                "Failed to destroy environment due to the following exception."
+            )
             logger.info("Manual environment cleanup required")
             return False

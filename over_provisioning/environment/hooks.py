@@ -40,4 +40,3 @@ class CleanupAllPodsInNamespaceHook(EnvironmentHook):
 
     def run(self):
         self._pods_deleter.delete_all()
-

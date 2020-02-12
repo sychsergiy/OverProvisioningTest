@@ -33,7 +33,9 @@ class Settings:
         self.kubernetes_namespace = kubernetes_namespace
         self.max_pod_creation_time_in_seconds = max_pod_creation_time_in_seconds
         self.nodes_label_selector = nodes_label_selector
-        self.over_provisioning_pods_label_selector = over_provisioning_pods_label_selector
+        self.over_provisioning_pods_label_selector = (
+            over_provisioning_pods_label_selector
+        )
         self.over_provisioning_pods_namespace = over_provisioning_pods_namespace
         self.pods_to_create_quantity = pods_to_create_quantity
         self.max_amount_of_nodes = max_amount_of_nodes

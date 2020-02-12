@@ -24,11 +24,17 @@ class PodsCleaner:
 
     def clean(self) -> bool:
         try:
-            logger.info(f"Trying to cleanup the following pods: {str(self._pods_to_delete)}")
+            logger.info(
+                f"Trying to cleanup the following pods: {str(self._pods_to_delete)}"
+            )
             self._pod_deleter.delete_many(self._pods_to_delete)
-            logger.info(f"Successfully cleanup pods: {str(self._pods_to_delete)}")
+            logger.info(
+                f"Successfully cleanup pods: {str(self._pods_to_delete)}"
+            )
             return True
         except Exception:
-            logger.exception("Failed to cleanup pods due to the following exception")
+            logger.exception(
+                "Failed to cleanup pods due to the following exception"
+            )
             logger.info("Manual pods cleanup required")
             return False

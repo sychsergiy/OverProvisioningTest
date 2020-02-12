@@ -19,7 +19,9 @@ class KuberNamespace:
             self._kuber.read_namespace(self._name)
         except client.rest.ApiException as e:
             if e.status == 404:
-                raise RuntimeError(f"Provided namespace: {self._name} doesnt exists.")
+                raise RuntimeError(
+                    f"Provided namespace: {self._name} doesnt exists."
+                )
             else:
                 raise e
         return True

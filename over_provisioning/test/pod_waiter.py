@@ -22,18 +22,26 @@ class PodWaiter:
         return pod.status.phase
 
     @staticmethod
-    def _is_time_limit_exhausted(waited_time: float, max_waiting_time: float) -> bool:
+    def _is_time_limit_exhausted(
+        waited_time: float, max_waiting_time: float
+    ) -> bool:
         return waited_time > max_waiting_time
 
-    def wait_on_running_status(self, pod_name: str, max_waiting_time: float) -> t.Tuple[bool, float]:
+    def wait_on_running_status(
+        self, pod_name: str, max_waiting_time: float
+    ) -> t.Tuple[bool, float]:
         with Timer() as timer:
-            logger.info(f"Wait until pod status is \"Running\", start time: {timer.start_time}")
+            logger.info(
+                f'Wait until pod status is "Running", start time: {timer.start_time}'
+            )
             while True:
                 if self._has_pod_running_status(pod_name):
                     logger.info(f"Waited time: {timer.elapsed}\n")
                     return True, timer.elapsed
                 else:
-                    if self._is_time_limit_exhausted(timer.elapsed, max_waiting_time):
+                    if self._is_time_limit_exhausted(
+                        timer.elapsed, max_waiting_time
+                    ):
                         return False, timer.elapsed
                     else:
                         self._wait(self._read_pod_interval)

@@ -6,7 +6,12 @@ logger = get_logger()
 
 
 class NodesAssigningTimeoutHandler:
-    def __init__(self, report_builder: ReportBuilder, nodes_finder: NodesFinder, max_available_nodes_to_create: int):
+    def __init__(
+        self,
+        report_builder: ReportBuilder,
+        nodes_finder: NodesFinder,
+        max_available_nodes_to_create: int,
+    ):
         self._report_builder = report_builder
         self._nodes_finder = nodes_finder
         self._max_available_nodes_to_create = max_available_nodes_to_create
@@ -39,7 +44,9 @@ def test_nodes_assigning_timeout_handler_handle():
     handler = NodesAssigningTimeoutHandler(report_builder, nodes_finder, 3)
     handler.handle()
 
-    assert report_builder._errors == ["Over provisioning pods nodes assigning timeout error"]
+    assert report_builder._errors == [
+        "Over provisioning pods nodes assigning timeout error"
+    ]
 
 
 def test_nodes_assigning_timeout_handler_handle_max_amount_of_nodes_reached():

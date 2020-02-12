@@ -10,8 +10,13 @@ logger = get_logger()
 
 
 class NodesAssigningWaiter:
-    def __init__(self, pod_reader: PodReader, report_builder: ReportBuilder, max_waiting_time: float,
-                 wait_interval: float = 60):
+    def __init__(
+        self,
+        pod_reader: PodReader,
+        report_builder: ReportBuilder,
+        max_waiting_time: float,
+        wait_interval: float = 60,
+    ):
         self._pod_reader = pod_reader
         self._max_waiting_time = max_waiting_time
         self._wait_interval = wait_interval
@@ -24,12 +29,16 @@ class NodesAssigningWaiter:
     def _all_pods_has_assigned_node(self) -> bool:
         return len(self._pods_to_wait_on) == 0
 
-    def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_timestamp: float):
+    def _set_that_node_was_assigned(
+        self, pod_name: str, node_name: str, node_assigning_timestamp: float
+    ):
         self._pods_to_wait_on.remove(pod_name)
         logger.info(
             f"New node: {node_name}  assigned for pod: {pod_name}. Assigning timestamp: {node_assigning_timestamp}"
         )
-        self._pods_node_assigning_time_map[pod_name] = NodeAssigning(pod_name, node_assigning_timestamp)
+        self._pods_node_assigning_time_map[pod_name] = NodeAssigning(
+            pod_name, node_assigning_timestamp
+        )
 
     @property
     def pods_node_assigning_time_map(self) -> t.Dict[str, NodeAssigning]:
@@ -50,14 +59,18 @@ class NodesAssigningWaiter:
                 for pod_name in pods_to_check:
                     is_assigned, node_name = self._node_was_assigned(pod_name)
                     if is_assigned:
-                        self._set_that_node_was_assigned(pod_name, node_name, timer.now())
+                        self._set_that_node_was_assigned(
+                            pod_name, node_name, timer.now()
+                        )
 
                 if self._is_time_limit_exhausted(timer.elapsed):
                     return False
 
                 self._wait(self._wait_interval)
 
-        logger.info(f"All over provisioning pods was assigned to new nodes. Waited time: {timer.elapsed}")
+        logger.info(
+            f"All over provisioning pods was assigned to new nodes. Waited time: {timer.elapsed}"
+        )
         return True
 
     @staticmethod

@@ -21,7 +21,9 @@ class OverProvisioningPodsFinder:
 
 
 class LabeledPodsFinder(OverProvisioningPodsFinder):
-    def __init__(self, kuber: client.CoreV1Api, namespace: str, label_selector: str):
+    def __init__(
+        self, kuber: client.CoreV1Api, namespace: str, label_selector: str
+    ):
         self._kuber = kuber
         self._label_selector = label_selector
         self._namespace = namespace
@@ -30,4 +32,7 @@ class LabeledPodsFinder(OverProvisioningPodsFinder):
         pods_list: client.models.v1_pod_list.V1PodList = self._kuber.list_namespaced_pod(
             self._namespace, label_selector=self._label_selector
         )
-        return [Pod(pod.metadata.name, pod.spec.node_name) for pod in pods_list.items]
+        return [
+            Pod(pod.metadata.name, pod.spec.node_name)
+            for pod in pods_list.items
+        ]
