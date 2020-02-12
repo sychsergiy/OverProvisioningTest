@@ -19,6 +19,7 @@ from over_provisioning.kuber.pod_reader import PodReader
 from over_provisioning.logger import get_logger
 from over_provisioning.pods_finder import LabeledPodsFinder
 from over_provisioning.settings import Settings
+from over_provisioning.test.nodes_assigning_timeout_handler import NodesAssigningTimeoutHandler
 from over_provisioning.test.pod_creating_loop import PodCreatingLoop
 from over_provisioning.test.node_assigning_waiter import NodesAssigningWaiter
 from over_provisioning.test.pod_waiter import PodWaiter
@@ -98,8 +99,10 @@ def main(
         over_provisioning_pods_finder, node_assigning_waiter
     )
 
+    nodes_assigning_timeout_handler = NodesAssigningTimeoutHandler(report_builder, nodes_finder, 10)
+
     pod_creating_loop = PodCreatingLoop(
-        pods_spawner, over_provisioning_pods_state_checker, report_builder,
+        pods_spawner, over_provisioning_pods_state_checker, nodes_assigning_timeout_handler, report_builder,
         pods_to_create_quantity
     )
 
