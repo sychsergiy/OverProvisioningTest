@@ -41,7 +41,7 @@ class Timer:
         self._end_time = None
 
     @staticmethod
-    def _now():
+    def now():
         return time.time()
 
     def __enter__(self):
@@ -55,7 +55,7 @@ class Timer:
     def elapsed(self) -> float:
         self._check_started()
 
-        end_time = self._end_time if self._end_time else self._now()
+        end_time = self._end_time if self._end_time else self.now()
         return end_time - self._start_time
 
     @property
@@ -69,10 +69,10 @@ class Timer:
         return self._end_time
 
     def start(self):
-        self._start_time = self._now()
+        self._start_time = self.now()
 
     def end(self):
-        self._end_time = self._now()
+        self._end_time = self.now()
 
     def _check_started(self):
         if self._start_time is None:

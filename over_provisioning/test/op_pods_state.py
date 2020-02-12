@@ -1,3 +1,4 @@
+import time
 import typing as t
 
 from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
@@ -14,10 +15,15 @@ class OverProvisioningPodsState:
 
         self._initial_pods: t.List[Pod] = []
         self._created_pods: t.Set[str] = set()
+        self._pods_creation_time_map: t.Dict[str, float] = {}
 
     @property
     def created_pods(self) -> t.Set[str]:
         return self._created_pods
+
+    @property
+    def pods_creation_time_map(self) -> t.Dict[str, float]:
+        return self._pods_creation_time_map
 
     def set_initial_pods(self):
         self._initial_pods = self._over_provisioning_pods_finder.find_pods()
@@ -52,7 +58,8 @@ class OverProvisioningPodsState:
         current_pods = self._over_provisioning_pods_finder.find_pods()
         return self._all_old_was_pods_removed(current_pods)
 
-    def get_newly_created_pods(self) -> t.Set[str]:
+    def save_newly_created_pods(self) -> t.Set[str]:
+        """returns set of newly created pods"""
         initial_pods_names = [pod.name for pod in self._initial_pods]
         current_pods = self._over_provisioning_pods_finder.find_pods()
         current_pods_names = [pod.name for pod in current_pods]
@@ -61,6 +68,18 @@ class OverProvisioningPodsState:
 
         newly_created_pods = recreated_pods - self._created_pods
         if newly_created_pods:
-            self._created_pods = self._created_pods.union(newly_created_pods)
+            self._save_newly_created_pods(newly_created_pods)
         return newly_created_pods
 
+    def _save_newly_created_pods(self, newly_created_pods: t.Iterable[str]):
+        self._created_pods = self._created_pods.union(newly_created_pods)
+        self._fill_pods_creation_time_map(newly_created_pods)
+
+    def _fill_pods_creation_time_map(self, newly_created_pods: t.Iterable[str]):
+        now = self._get_current_time()
+        for pod_name in newly_created_pods:
+            self._pods_creation_time_map[pod_name] = now
+
+    @staticmethod
+    def _get_current_time():
+        return time.time()
