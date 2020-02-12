@@ -26,7 +26,7 @@ from over_provisioning.test.pod_waiter import PodWaiter
 from over_provisioning.test.pods_cleaner import PodsCleaner
 from over_provisioning.test.pods_spawner import PodsSpawner
 from over_provisioning.pod_specs import local_development_pod_spec, eks_development_pod_spec
-from over_provisioning.test.pods_state_checker import OverProvisioningPodsStateChecker
+from over_provisioning.test.op_pods_state import OverProvisioningPodsState
 from over_provisioning.test.report_builder import ReportBuilder
 from over_provisioning.test.runner import OneOverProvisioningPodTest
 
@@ -97,7 +97,7 @@ def main(
     pod_spec = local_development_pod_spec if local_development else eks_development_pod_spec
 
     pods_spawner = PodsSpawner(pod_creator, pod_waiter, "test-pod", pod_spec)
-    over_provisioning_pods_state_checker = OverProvisioningPodsStateChecker(
+    over_provisioning_pods_state_checker = OverProvisioningPodsState(
         over_provisioning_pods_finder, node_assigning_waiter
     )
 
@@ -106,7 +106,8 @@ def main(
     )
 
     pod_creating_loop = PodCreatingLoop(
-        pods_spawner, over_provisioning_pods_state_checker, nodes_assigning_timeout_handler, report_builder,
+        pods_spawner, over_provisioning_pods_state_checker, node_assigning_waiter,
+        nodes_assigning_timeout_handler, report_builder,
         pods_to_create_quantity
     )
 

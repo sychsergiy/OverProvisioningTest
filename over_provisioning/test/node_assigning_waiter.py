@@ -16,22 +16,23 @@ class NodesAssigningWaiter:
         self._wait_interval = wait_interval
         self._report_builder = report_builder
 
-        self._pods_with_unassigned_nodes: t.Set[str] = set()
+        self._pods_to_wait_on: t.Set[str] = set()
 
-    def _all_pods_has_assigned_nodes(self) -> bool:
-        return len(self._pods_with_unassigned_nodes) == 0
+    def _all_pods_has_assigned_node(self) -> bool:
+        return len(self._pods_to_wait_on) == 0
 
     def _set_that_node_was_assigned(self, pod_name: str, node_name: str, node_assigning_time: float):
-        self._pods_with_unassigned_nodes.remove(pod_name)
+        self._pods_to_wait_on.remove(pod_name)
         logger.info(f"New node: {node_name}  assigned for pod: {pod_name}, assigning time: {node_assigning_time}")
         self._report_builder.add_over_provisioning_pod_report(pod_name, node_name, node_assigning_time)
 
-    def wait_on_pods(self, pods_names: t.List[str]):
-        self._pods_with_unassigned_nodes = set(pods_names)
+    def set_pods_to_wait_on(self, pods_names: t.Iterable[str]):
+        self._pods_to_wait_on = set(pods_names)
 
+    def wait(self):
         with Timer() as timer:
-            while not self._all_pods_has_assigned_nodes():
-                pods_to_check = self._pods_with_unassigned_nodes.copy()
+            while not self._all_pods_has_assigned_node():
+                pods_to_check = self._pods_to_wait_on.copy()
                 logger.info(
                     f"Waiting on assigning nodes for the following pods: {str(pods_to_check)}."
                     f" Waited time: {timer.elapsed}"

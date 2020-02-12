@@ -4,7 +4,7 @@ from over_provisioning.pods_finder import OverProvisioningPodsFinder, Pod
 from over_provisioning.test.node_assigning_waiter import NodesAssigningWaiter
 
 
-class OverProvisioningPodsStateChecker:
+class OverProvisioningPodsState:
     def __init__(
             self, over_provisioning_pods_finder: OverProvisioningPodsFinder,
             node_assigning_waiter: NodesAssigningWaiter
@@ -64,7 +64,3 @@ class OverProvisioningPodsStateChecker:
             self._created_pods = self._created_pods.union(newly_created_pods)
         return newly_created_pods
 
-    def wait_on_nodes_assigning(self) -> bool:
-        current_pods_names = self._over_provisioning_pods_finder.find_pods()
-        pods_names_with_unassigned_nodes = [pod.name for pod in current_pods_names if pod.node_name is None]
-        return self._node_assigning_waiter.wait_on_pods(pods_names_with_unassigned_nodes)
