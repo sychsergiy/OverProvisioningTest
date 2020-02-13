@@ -46,6 +46,8 @@ def run_test(
     with open("report.json", "w") as f:
         json.dump(report, f)
 
+    logger.info(f"REPORT: \n{report}")
+
     if result:
         logger.info("Test pass ......................")
         sys.exit(0)
