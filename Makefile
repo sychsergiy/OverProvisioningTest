@@ -11,7 +11,8 @@ local_run:
       --create-new-namespace \
       --pods-to-create-quantity=3 \
       --max-amount-of-nodes=15 \
-      --local-development
+      --local-development \
+      --max-nodes-assigning-time=900
 
 run:
 	python cli.py kube_remote_config.yaml \
@@ -22,3 +23,4 @@ run:
       --nodes-label-selector="kubernetes.io/role=worker"  \
       --max-amount-of-nodes=4 \
       --create-new-namespace \
+      --max_nodes_assigning_time=900

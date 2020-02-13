@@ -29,6 +29,7 @@ class Settings:
         over_provisioning_pods_namespace: str,
         pods_to_create_quantity: int,
         max_amount_of_nodes: int,
+        max_nodes_assigning_time: int,
     ):
         self.kubernetes_namespace = kubernetes_namespace
         self.max_pod_creation_time_in_seconds = max_pod_creation_time_in_seconds
@@ -39,6 +40,16 @@ class Settings:
         self.over_provisioning_pods_namespace = over_provisioning_pods_namespace
         self.pods_to_create_quantity = pods_to_create_quantity
         self.max_amount_of_nodes = max_amount_of_nodes
+        self.max_nodes_assigning_time = max_nodes_assigning_time
+
+    @property
+    def max_nodes_assigning_time(self):
+        return self._max_nodes_assigning_time
+
+    @max_nodes_assigning_time.setter
+    def max_nodes_assigning_time(self, value):
+        self._validate_not_none(value, "max_nodes_assigning_time")
+        self._max_nodes_assigning_time = value
 
     @property
     def max_amount_of_nodes(self):

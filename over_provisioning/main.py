@@ -67,6 +67,7 @@ def main(
     pods_to_create_quantity: int,
     local_development: bool,
     max_amount_of_nodes: int,
+    max_nodes_assigning_time: int,
 ):
     settings = Settings(
         kubernetes_namespace,
@@ -76,6 +77,7 @@ def main(
         over_provisioning_pods_namespace,
         pods_to_create_quantity,
         max_amount_of_nodes,
+        max_nodes_assigning_time,
     )
     kuber = factory.create_kuber(kubernetes_conf_path)
 
@@ -97,7 +99,7 @@ def main(
     node_assigning_waiter = NodesAssigningWaiter(
         PodReader(kuber, settings.over_provisioning_pods_namespace),
         report_builder,
-        60 * 15,  # 60 wait on nodes assigning for 15 minutes
+        max_nodes_assigning_time,  # 60 wait on nodes assigning for 15 minutes
     )
 
     pod_spec = (

@@ -70,6 +70,12 @@ from over_provisioning.main import main
     type=click.INT,
     help="Define max quantity of EC2 instances(nodes) which can be created",
 )
+@click.option(
+    "--max-nodes-assigning-time",
+    envvar="MAX_NODES_ASSIGNING_TIME",
+    type=click.INT,
+    help="Define max to wait on over provisioning pods will be assigned to new nodes",
+)
 def run(
     kubernetes_conf_path: str,
     kubernetes_namespace: str,
@@ -81,6 +87,7 @@ def run(
     pods_to_create_quantity: int,
     local_development: bool,
     max_amount_of_nodes: int,
+    max_nodes_assigning_time: int,
 ):
     main(
         kubernetes_conf_path,
@@ -93,6 +100,7 @@ def run(
         pods_to_create_quantity,
         local_development,
         max_amount_of_nodes,
+        max_nodes_assigning_time,
     )
 
 
